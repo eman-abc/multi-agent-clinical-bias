@@ -41,6 +41,7 @@ from shared.config_and_utils import (
     GENERATOR_MODEL_ID,
     VALIDATOR_MODEL_ID,
     MAX_VALIDATION_REGENERATION_ATTEMPTS,
+    _is_content_filter_error,
 )
 from shared.conditions import (
     Attribute,
@@ -305,6 +306,7 @@ class ValidatedNote:
     validation_details: dict[str, bool | None]
     regeneration_attempts: int
     dry_run: bool
+    blocked_reason: str | None = None  # e.g. "content_filter_azure" -- see _generate_and_validate
 
 
 def _require_crewai():
@@ -507,8 +509,33 @@ def _generate_and_validate(case: AMQARecord, spec: ConditionSpec, carrier_line: 
     total_attempts = max_regens + 1
 
     for attempt in range(1, total_attempts + 1):
-        note = _write_note(case_facts, carrier_line, spec, dry_run=dry_run)
-        details = _validate_note(case_facts, note, carrier_line, spec, dry_run=dry_run)
+        try:
+            note = _write_note(case_facts, carrier_line, spec, dry_run=dry_run)
+            details = _validate_note(case_facts, note, carrier_line, spec, dry_run=dry_run)
+        except Exception as exc:  # noqa: BLE001
+            if _is_content_filter_error(exc):
+                # Confirmed live: crashed an entire run_full_experiment.py
+                # batch before this was added. Azure's content filter can
+                # block the Note-Writer or the Note-Validator (not just
+                # Agent B's inference calls, already handled separately in
+                # shared/experiments.py) when the underlying case involves
+                # genuinely disturbing clinical content (trauma, violence,
+                # substance use). Deterministic for the same content --
+                # retrying won't help, so return immediately as blocked
+                # rather than burning the remaining regeneration attempts.
+                logger.warning(
+                    "[crew_pipeline] Content-filter block (Azure ResponsibleAIPolicyViolation) "
+                    "case=%s condition=%s -- returning as blocked_reason='content_filter_azure', "
+                    "not retrying (deterministic for this content). Underlying error: %s",
+                    spec.case_id, spec.condition_label.value, exc,
+                )
+                return ValidatedNote(
+                    case_id=spec.case_id, condition_label=spec.condition_label, note_text="",
+                    carrier_line=carrier_line, validation_passed=False, validation_details={},
+                    regeneration_attempts=attempt - 1, dry_run=dry_run,
+                    blocked_reason="content_filter_azure",
+                )
+            raise
         last_note, last_details = note, details
 
         if _validation_passed(details):
@@ -532,6 +559,19 @@ def _generate_and_validate(case: AMQARecord, spec: ConditionSpec, carrier_line: 
 
 def _generate_redacted_note(case: AMQARecord, spec: ConditionSpec, *, dry_run: bool) -> ValidatedNote:
     e_plus_note = _generate_and_validate(case, spec, spec.carrier_value, dry_run=dry_run)
+
+    if e_plus_note.blocked_reason:
+        # Forward the block rather than silently proceeding to redact an
+        # empty/unusable note -- redact_carrier_phrase("", ...) would just
+        # return found=False with no indication WHY, and experiments.py's
+        # blocked_reason check wouldn't see this without it being forwarded.
+        return ValidatedNote(
+            case_id=spec.case_id, condition_label=ConditionLabel.E_PLUS_REDACT, note_text="",
+            carrier_line=spec.carrier_value, validation_passed=False, validation_details={},
+            regeneration_attempts=e_plus_note.regeneration_attempts, dry_run=dry_run,
+            blocked_reason=e_plus_note.blocked_reason,
+        )
+
     redacted_text, found = redact_carrier_phrase(e_plus_note.note_text, spec.carrier_value)
 
     if not found:
@@ -605,6 +645,20 @@ def generate_paraphrase_note(case: AMQARecord, spec: ConditionSpec, *, neutral_n
         )
         neutral_note = _generate_and_validate(case, neutral_spec, None, dry_run=effective_dry_run)
 
+    if neutral_note.blocked_reason:
+        # The underlying N is content-filter blocked (empty note_text) --
+        # whether it arrived here already-blocked (passed in) or was just
+        # freshly regenerated internally above. Confirmed live: proceeding
+        # to paraphrase an empty string crashed the whole batch run inside
+        # token_edit_distance_pct ("original_tokens is empty"). Forward the
+        # block instead of ever attempting to paraphrase nothing.
+        return ValidatedNote(
+            case_id=spec.case_id, condition_label=ConditionLabel.PARAPHRASE, note_text="",
+            carrier_line=None, validation_passed=False, validation_details={},
+            regeneration_attempts=0, dry_run=effective_dry_run,
+            blocked_reason=neutral_note.blocked_reason,
+        )
+
     base_text = neutral_note.note_text
 
     if effective_dry_run:
@@ -622,7 +676,23 @@ def generate_paraphrase_note(case: AMQARecord, spec: ConditionSpec, *, neutral_n
             spec.case_id,
         )
 
-    validation_details = _validate_note(case.neutralised_question, result.paraphrase, None, spec, dry_run=effective_dry_run)
+    try:
+        validation_details = _validate_note(case.neutralised_question, result.paraphrase, None, spec, dry_run=effective_dry_run)
+    except Exception as exc:  # noqa: BLE001
+        if _is_content_filter_error(exc):
+            logger.warning(
+                "[crew_pipeline] Content-filter block (Azure ResponsibleAIPolicyViolation) "
+                "case=%s condition=P -- returning as blocked_reason='content_filter_azure'. "
+                "Underlying error: %s",
+                spec.case_id, exc,
+            )
+            return ValidatedNote(
+                case_id=spec.case_id, condition_label=ConditionLabel.PARAPHRASE, note_text="",
+                carrier_line=None, validation_passed=False, validation_details={},
+                regeneration_attempts=0, dry_run=effective_dry_run,
+                blocked_reason="content_filter_azure",
+            )
+        raise
     passed = _validation_passed(validation_details) and not result.refused
 
     return ValidatedNote(

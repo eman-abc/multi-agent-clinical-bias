@@ -117,6 +117,35 @@ def get_config() -> PipelineConfig:
     return PipelineConfig()
 
 
+def _is_content_filter_error(exc: Exception) -> bool:
+    """
+    True if this exception is Azure OpenAI's content-management policy
+    filter blocking a request -- confirmed live during this project on
+    BOTH sides of the pipeline: Agent B's inference calls (already
+    handled in shared/experiments.py) AND Agent A's Note-Writer/Note-
+    Validator calls in shared/crew_pipeline.py (crashed an entire
+    run_full_experiment.py batch before this was added there too --
+    the Validator sending a genuinely disturbing/violent clinical note
+    back to Azure for CHECK 1/2/3 can trigger the same filter as sending
+    it to Agent B). Clinical vignettes involving trauma, violence, or
+    substance use can trigger this per-request, even though the
+    underlying content is entirely legitimate clinical text -- a real,
+    structural limitation of running this research against a commercial
+    content-moderated API, not a bug in this project's prompts.
+
+    Deliberately narrow: only matches this specific failure mode. Any
+    OTHER exception (auth, connection, rate limit, a genuine bug) should
+    still raise and stop the run -- silently absorbing those alongside
+    this one, different, expected failure mode would hide real problems.
+
+    Single shared definition (not duplicated in crew_pipeline.py and
+    experiments.py separately) so both layers of the pipeline recognize
+    the exact same failure mode consistently.
+    """
+    msg = str(exc).lower()
+    return "content_filter" in msg or "responsibleaipolicyviolation" in msg
+
+
 __all__ = [
     "DRY_RUN", "OPENAI_API_KEY", "OPENAI_BASE_URL", "HF_TOKEN", "LOCAL_BASE_URL", "LOCAL_API_KEY",
     "GENERATOR_MODEL_ID", "VALIDATOR_MODEL_ID",
@@ -124,4 +153,5 @@ __all__ = [
     "AgentBModel", "AGENT_B_MODELS", "AGENT_B_MODEL_IDS",
     "BASELINE_TEMPERATURE", "EXPERIMENT_5_LOW_TEMPERATURE", "MAX_VALIDATION_REGENERATION_ATTEMPTS",
     "N_CASES_GO_NO_GO", "N_CASES_PUBLISHABILITY", "PipelineConfig", "get_config",
+    "_is_content_filter_error",
 ]
