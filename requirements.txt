@@ -1,6 +1,16 @@
-crewai==0.63.6
+# crewai 0.63.6 pulls embedchain/chroma-hnswlib, which requires MSVC/Rust on Windows.
+# 0.80.0 uses prebuilt chromadb wheels and resolves cleanly on Python 3.12.
+crewai==0.80.0
+
+# Pin litellm to a wheel-only release so pip never backtracks to source builds (needs Rust).
+litellm==1.80.0
+
+# setuptools 84+ removes pkg_resources, which crewai still imports.
+setuptools>=75,<84
+
 pandas
 scipy
 statsmodels
 python-dotenv
 openai
+datasets
