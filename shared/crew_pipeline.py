@@ -41,6 +41,7 @@ from shared.config_and_utils import (
     GENERATOR_MODEL_ID,
     VALIDATOR_MODEL_ID,
     MAX_VALIDATION_REGENERATION_ATTEMPTS,
+    BASELINE_TEMPERATURE,
     _is_content_filter_error,
 )
 from shared.conditions import (
@@ -332,7 +333,12 @@ def _run_single_task_live(agent, description: str, expected_output: str, *, mode
     response = client.chat.completions.create(
         model=effective_model,
         messages=[{"role": "user", "content": description}],
-        temperature=0.7,
+        # CHANGED from hardcoded 0.7: FairMedQA/AMQA sets temperature=0.0
+        # for their generation step too ("all the model temperatures are
+        # set to 0.0 for more stable responses"). Used for Agent A
+        # (Note-Writer) and the Note-Validator's checks alike, via this
+        # shared helper.
+        temperature=BASELINE_TEMPERATURE,
     )
     text = (response.choices[0].message.content or "").strip()
     if not text:
@@ -589,6 +595,17 @@ def _generate_redacted_note(case: AMQARecord, spec: ConditionSpec, *, dry_run: b
 
 
 class _OpenAIParaphraseModel:
+    # NOTE: deliberately NOT changed to BASELINE_TEMPERATURE (0.0), unlike
+    # every other temperature in this file. generate_adjusted_paraphrase()
+    # (vendored cfprompt) retries this call repeatedly (real live runs
+    # have shown retries_used up to 51) searching for a paraphrase that
+    # hits a target token-edit-distance percentage. At temperature=0, the
+    # identical input always produces the identical output -- every retry
+    # would return the exact same text, making the search loop pointless
+    # and likely to exhaust all retries identically rather than ever
+    # converging. This component genuinely needs stochastic variation to
+    # do its job; it isn't a measurement/decision point the way Agent A's
+    # note-writing or the Validator's checks are.
     def __init__(self, model_id: str = GENERATOR_MODEL_ID, *, temperature: float = 0.7, max_tokens: int = 1024):
         self._model_id = model_id
         self._temperature = temperature

@@ -293,6 +293,221 @@ def _run_chat_completion_live(prompt, classes, *, model, temperature, base_url, 
     return result
 
 
+def _extract_class_logprobs_chat(response, classes: Sequence[str]) -> dict[str, float] | None:
+    """
+    Chat Completions logprobs schema is DIFFERENT from the legacy
+    Completions schema _extract_class_logprobs (above) was built for:
+    response.choices[0].logprobs.content[0].top_logprobs -- an extra
+    `.content` level (one entry per generated token) -- not
+    response.choices[0].logprobs.top_logprobs[0].
+
+    Confirmed live during this project: gpt-5.4-mini via Azure DOES
+    support logprobs on Chat Completions -- a real, current, documented
+    OpenAI feature, contrary to this project's earlier working assumption
+    that the Chat-Completions fallback path had no logprobs available at
+    all. Verified on a realistic, non-trivial clinical vignette (not a
+    forced single-token case): a genuine 85%/15% split across two
+    adjacent ESI classes came back, not an artificially saturated 100%
+    single answer -- confirming this is usable for real probability-
+    distribution-based metrics (JSD, AD-on-ESI, the Experiment 3
+    reversion fraction), not just a token-level curiosity.
+    """
+    try:
+        entry = response.choices[0].logprobs.content[0]
+    except (AttributeError, IndexError, TypeError):
+        return None
+
+    token_to_logprob: dict[str, float] = {}
+    # Include the sampled token itself defensively, in case some model/
+    # API version ever omits it from its own top_logprobs list.
+    if getattr(entry, "token", None) is not None and getattr(entry, "logprob", None) is not None:
+        token_to_logprob[entry.token] = entry.logprob
+    for item in (getattr(entry, "top_logprobs", None) or []):
+        token = getattr(item, "token", None) if not isinstance(item, dict) else item.get("token")
+        logprob = getattr(item, "logprob", None) if not isinstance(item, dict) else item.get("logprob")
+        if token is not None and logprob is not None:
+            token_to_logprob[token] = logprob
+
+    if not token_to_logprob:
+        return None
+
+    found: dict[str, float] = {}
+    for cls in classes:
+        for candidate in (cls, f" {cls}"):
+            if candidate in token_to_logprob:
+                found[cls] = token_to_logprob[candidate]
+                break
+
+    if not found:
+        return None
+    if len(found) < len(classes):
+        missing = set(classes) - set(found)
+        logger.warning(
+            "[inference_engine] %d/%d class tokens missing from Chat Completions "
+            "top_logprobs (%s); renormalizing over only the classes actually observed.",
+            len(missing), len(classes), missing,
+        )
+
+    max_lp = max(found.values())
+    exp_vals = {c: math.exp(lp - max_lp) for c, lp in found.items()}
+    total = sum(exp_vals.values())
+    return {c: v / total for c, v in exp_vals.items()}
+
+
+def _run_chat_completion_messages_logprobs_live(
+    messages: list[dict[str, str]],
+    classes: Sequence[str],
+    *,
+    model: str,
+    temperature: float,
+    base_url: str | None,
+    api_key: str | None,
+    max_tokens: int,
+    top_logprobs: int,
+    max_retries: int,
+) -> tuple[ClassProbabilityResult, str]:
+    """
+    Messages-based logprobs helper -- needed so the combined-context
+    variant (which must pass prior conversation history, not just one
+    prompt) can also use real logprobs, not just the single-prompt case.
+    Mirrors _run_chat_completion_messages_live's structure exactly, with
+    logprobs requested and extracted via _extract_class_logprobs_chat.
+    Returns (result, raw_assistant_text) so a caller building a multi-turn
+    exchange can append the raw text back into the next call's messages.
+    """
+    client = _get_client(base_url, api_key)
+    response = None
+    for attempt in range(max_retries + 1):
+        try:
+            response = _call_with_max_completion_tokens_compat(
+                client.chat.completions.create,
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                logprobs=True,
+                top_logprobs=top_logprobs,
+            )
+            break
+        except Exception as exc:  # noqa: BLE001
+            if attempt == max_retries:
+                raise RuntimeError(
+                    f"[inference_engine] Chat-completions (logprobs) request failed for "
+                    f"model={model!r} after {max_retries + 1} attempt(s). Underlying error: {exc}"
+                ) from exc
+            wait = min(2**attempt, 30)
+            logger.warning(
+                "[inference_engine] Chat-completions (logprobs) request failed (attempt %d/%d): %s. Retrying in %ds.",
+                attempt + 1, max_retries + 1, exc, wait,
+            )
+            time.sleep(wait)
+
+    raw_text = (response.choices[0].message.content or "") if response.choices else ""
+    class_probs = _extract_class_logprobs_chat(response, classes)
+    logprobs_available = class_probs is not None
+    if class_probs is None:
+        logger.warning(
+            "[inference_engine] No usable Chat Completions logprobs from model=%r; falling back to one-hot from sampled text %r.",
+            model, raw_text,
+        )
+        class_probs = _one_hot_fallback(raw_text, classes)
+
+    top_class = max(class_probs, key=class_probs.get) if class_probs else ""
+    result = ClassProbabilityResult(
+        top_class=top_class,
+        class_probabilities=class_probs or {},
+        raw_text=raw_text,
+        logprobs_available=logprobs_available,
+        model=model,
+        temperature=temperature,
+    )
+    return result, raw_text
+
+
+def _run_chat_completion_logprobs_live(
+    prompt: str,
+    classes: Sequence[str],
+    *,
+    model: str,
+    temperature: float,
+    base_url: str | None,
+    api_key: str | None,
+    max_tokens: int,
+    top_logprobs: int,
+    max_retries: int,
+) -> ClassProbabilityResult:
+    """Like _run_chat_completion_live, but requests and extracts real logprobs instead of one-hot text parsing."""
+    result, _raw = _run_chat_completion_messages_logprobs_live(
+        [{"role": "user", "content": prompt}], classes, model=model, temperature=temperature,
+        base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+    )
+    return result
+
+
+def run_esi_triage_chat_completions_logprobs(
+    validated_note, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None,
+    max_tokens=150, top_logprobs=5, max_retries=3,
+) -> ClassProbabilityResult:
+    """
+    Real-logprobs variant of run_esi_triage_chat_completions. Requests
+    logprobs=True via Chat Completions -- verified live to work on this
+    project's Azure gpt-5.4-mini deployment, including genuine multi-class
+    distributions on realistic vignettes (not just single-token-certain
+    cases). Falls back to one-hot text parsing if logprobs come back
+    unusable for any reason (defensive, same convention as the
+    legacy-Completions path).
+
+    top_logprobs default is 5, NOT the API's general max of 20 -- confirmed
+    live that this specific Azure deployment of gpt-5.4-mini hard-rejects
+    any value above 5 ("Invalid value for 'top_logprobs': must be less
+    than or equal to 5"), a deployment-specific cap distinct from the
+    documented OpenAI-wide max. 5 is still enough to see the FULL relevant
+    distribution in almost every case here, since ESI_CLASSES has exactly
+    5 members and USMLE_CLASSES has 4 -- the model would need to place
+    enough probability on a non-class token to push a real class out of
+    the top 5, which is uncommon but not impossible; if a class is ever
+    missing, extraction already renormalizes over whatever WAS returned
+    and logs a warning (see _extract_class_logprobs_chat) rather than
+    silently misrepresenting the distribution.
+
+    max_tokens default is 150, NOT 5 -- confirmed live: this deployment
+    also rejects logprobs outright on short completions ("Logprobs could
+    not be returned for short completions. Please increase
+    max_completion_tokens to at least 150 to receive logprobs"), a
+    reasoning-model-family constraint unrelated to how long the actual
+    answer is. This does NOT change which token gets scored: both prompt
+    templates end in a priming suffix ("...is: (") that forces the
+    answer token to be the first token generated regardless of how much
+    budget is available (the same suffixed-protocol convention Kumarappan
+    & Mujoo use) -- 150 just gives Azure enough room to compute and
+    return logprobs for that first token; it doesn't cause the model to
+    write more before answering.
+    """
+    model_id = _model_id(model)
+    prompt = ESI_TRIAGE_PROMPT_TEMPLATE.format(validated_note=validated_note)
+    return _run_chat_completion_logprobs_live(
+        prompt, ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url,
+        api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+    )
+
+
+def run_usmle_diagnostic_chat_completions_logprobs(
+    validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None,
+    api_key=None, max_tokens=150, top_logprobs=5, max_retries=3,
+) -> ClassProbabilityResult:
+    """Real-logprobs variant of run_usmle_diagnostic_chat_completions. See run_esi_triage_chat_completions_logprobs."""
+    model_id = _model_id(model)
+    prompt = USMLE_DIAGNOSTIC_PROMPT_TEMPLATE.format(
+        validated_note=validated_note, usmle_question=usmle_question,
+        option_a=options.get("A", ""), option_b=options.get("B", ""),
+        option_c=options.get("C", ""), option_d=options.get("D", ""),
+    )
+    return _run_chat_completion_logprobs_live(
+        prompt, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url,
+        api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+    )
+
+
 def run_esi_triage_chat_completions(validated_note, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=20, max_retries=3) -> ClassProbabilityResult:
     model_id = _model_id(model)
     prompt = ESI_TRIAGE_PROMPT_TEMPLATE.format(validated_note=validated_note)
@@ -334,6 +549,37 @@ def run_esi_then_usmle_combined_chat_completions(validated_note, usmle_question,
     return CombinedTaskResult(esi_result=esi_result, usmle_result=usmle_result, order="esi_first")
 
 
+def run_esi_then_usmle_combined_chat_completions_logprobs(
+    validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None,
+    api_key=None, max_tokens=150, top_logprobs=5, max_retries=3,
+) -> CombinedTaskResult:
+    """Real-logprobs variant of run_esi_then_usmle_combined_chat_completions. Same conversation-history mechanism, both turns requesting logprobs."""
+    model_id = _model_id(model)
+    esi_prompt = ESI_TRIAGE_PROMPT_TEMPLATE.format(validated_note=validated_note)
+    usmle_prompt = USMLE_DIAGNOSTIC_PROMPT_TEMPLATE.format(
+        validated_note=validated_note, usmle_question=usmle_question,
+        option_a=options.get("A", ""), option_b=options.get("B", ""),
+        option_c=options.get("C", ""), option_d=options.get("D", ""),
+    )
+
+    esi_result, esi_raw = _run_chat_completion_messages_logprobs_live(
+        [{"role": "user", "content": esi_prompt}], ESI_CLASSES, model=model_id, temperature=temperature,
+        base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+    )
+
+    messages_with_history = [
+        {"role": "user", "content": esi_prompt},
+        {"role": "assistant", "content": esi_raw},
+        {"role": "user", "content": usmle_prompt},
+    ]
+    usmle_result, _usmle_raw = _run_chat_completion_messages_logprobs_live(
+        messages_with_history, USMLE_CLASSES, model=model_id, temperature=temperature,
+        base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+    )
+
+    return CombinedTaskResult(esi_result=esi_result, usmle_result=usmle_result, order="esi_first")
+
+
 def run_esi_triage_cot(validated_note, *, model, temperature=BASELINE_TEMPERATURE, dry_run=None, base_url=None, api_key=None, max_tokens=512, max_retries=3) -> FreeGenerationResult:
     model_id = _model_id(model)
     effective_dry_run = DRY_RUN if dry_run is None else dry_run
@@ -369,6 +615,7 @@ __all__ = [
     "ClassProbabilityResult", "FreeGenerationResult",
     "run_esi_triage", "run_usmle_diagnostic",
     "run_esi_triage_chat_completions", "run_usmle_diagnostic_chat_completions",
+    "run_esi_triage_chat_completions_logprobs", "run_usmle_diagnostic_chat_completions_logprobs",
     "CombinedTaskResult", "run_esi_then_usmle_combined_chat_completions",
     "run_esi_triage_cot", "run_usmle_diagnostic_cot",
     "run_esi_triage_all_models", "run_usmle_diagnostic_all_models",

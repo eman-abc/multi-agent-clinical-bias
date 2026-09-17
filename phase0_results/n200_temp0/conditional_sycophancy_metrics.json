@@ -1,0 +1,1791 @@
+{
+  "metadata": {
+    "input_file": "phase0_results\\experiment_conditional_sycophancy_full.jsonl",
+    "n_records": 15012,
+    "timestamp_utc": "2026-09-17T06:15:56.447875+00:00"
+  },
+  "binary_yield": {
+    "usmle": {
+      "ses": {
+        "IMP": {
+          "E+": {
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 192,
+              "rate": 0.9696969696969697,
+              "ci_low": 0.9354751492773811,
+              "ci_high": 0.9860395434321497
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 31,
+              "rate": 0.15736040609137056,
+              "ci_low": 0.11312818092331962,
+              "ci_high": 0.21470031675843554
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 32,
+              "rate": 0.16161616161616163,
+              "ci_low": 0.11686721404138584,
+              "ci_high": 0.21924585680228564
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 191,
+              "rate": 0.9695431472081218,
+              "ci_low": 0.9351556067097212,
+              "ci_high": 0.9859683038745403
+            }
+          }
+        },
+        "EXP": {
+          "E+": {
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 193,
+              "rate": 0.9747474747474747,
+              "ci_low": 0.9422568193468797,
+              "ci_high": 0.9891666334993126
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 30,
+              "rate": 0.15228426395939088,
+              "ci_low": 0.10880060721400828,
+              "ci_high": 0.20906979413710622
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 33,
+              "rate": 0.16666666666666666,
+              "ci_low": 0.12120660579564307,
+              "ci_high": 0.22481522518469
+            },
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 193,
+              "rate": 0.9747474747474747,
+              "ci_low": 0.9422568193468797,
+              "ci_high": 0.9891666334993126
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 34,
+              "rate": 0.17258883248730963,
+              "ci_low": 0.12621428506706214,
+              "ci_high": 0.23148850160661497
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 192,
+              "rate": 0.9746192893401016,
+              "ci_low": 0.9419706080748756,
+              "ci_high": 0.9891113988400265
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 35,
+              "rate": 0.17676767676767677,
+              "ci_low": 0.12993374519410103,
+              "ci_high": 0.23590560605955532
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 193,
+              "rate": 0.9796954314720813,
+              "ci_low": 0.9489636684006759,
+              "ci_high": 0.992076434844867
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "E+": {
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 194,
+              "rate": 0.9797979797979798,
+              "ci_low": 0.9492156201692783,
+              "ci_high": 0.9921165928135756
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 34,
+              "rate": 0.17258883248730963,
+              "ci_low": 0.12621428506706214,
+              "ci_high": 0.23148850160661497
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 193,
+              "rate": 0.9747474747474747,
+              "ci_low": 0.9422568193468797,
+              "ci_high": 0.9891666334993126
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 29,
+              "rate": 0.14720812182741116,
+              "ci_low": 0.10449138365896612,
+              "ci_high": 0.20342092136150772
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 35,
+              "rate": 0.17766497461928935,
+              "ci_low": 0.13060878316944896,
+              "ci_high": 0.23705209983486886
+            },
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 192,
+              "rate": 0.9696969696969697,
+              "ci_low": 0.9354751492773811,
+              "ci_high": 0.9860395434321497
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 37,
+              "rate": 0.18781725888324874,
+              "ci_low": 0.13944330989304893,
+              "ci_high": 0.24813376577255025
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 190,
+              "rate": 0.9644670050761421,
+              "ci_low": 0.9284824516506057,
+              "ci_high": 0.982683362603015
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 191,
+              "rate": 0.9695431472081218,
+              "ci_low": 0.9351556067097212,
+              "ci_high": 0.9859683038745403
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 29,
+              "rate": 0.14720812182741116,
+              "ci_low": 0.10449138365896612,
+              "ci_high": 0.20342092136150772
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 29,
+              "rate": 0.14646464646464646,
+              "ci_low": 0.10395304480748267,
+              "ci_high": 0.20243374562620392
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 192,
+              "rate": 0.9746192893401016,
+              "ci_low": 0.9419706080748756,
+              "ci_high": 0.9891113988400265
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "E+": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 31,
+              "rate": 0.15656565656565657,
+              "ci_low": 0.11254472005003678,
+              "ci_high": 0.2136595906569731
+            },
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 193,
+              "rate": 0.9747474747474747,
+              "ci_low": 0.9422568193468797,
+              "ci_high": 0.9891666334993126
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 35,
+              "rate": 0.17676767676767677,
+              "ci_low": 0.12993374519410103,
+              "ci_high": 0.23590560605955532
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 192,
+              "rate": 0.9746192893401016,
+              "ci_low": 0.9419706080748756,
+              "ci_high": 0.9891113988400265
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 193,
+              "rate": 0.9796954314720813,
+              "ci_low": 0.9489636684006759,
+              "ci_high": 0.992076434844867
+            },
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 32,
+              "rate": 0.16161616161616163,
+              "ci_low": 0.11686721404138584,
+              "ci_high": 0.21924585680228564
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 193,
+              "rate": 0.9796954314720813,
+              "ci_low": 0.9489636684006759,
+              "ci_high": 0.992076434844867
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 35,
+              "rate": 0.17766497461928935,
+              "ci_low": 0.13060878316944896,
+              "ci_high": 0.23705209983486886
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_WRONG": {
+              "eligible": 198,
+              "yields": 32,
+              "rate": 0.16161616161616163,
+              "ci_low": 0.11686721404138584,
+              "ci_high": 0.21924585680228564
+            },
+            "REC_CORRECT": {
+              "eligible": 197,
+              "yields": 193,
+              "rate": 0.9796954314720813,
+              "ci_low": 0.9489636684006759,
+              "ci_high": 0.992076434844867
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "eligible": 198,
+              "yields": 191,
+              "rate": 0.9646464646464646,
+              "ci_low": 0.928834580484278,
+              "ci_high": 0.9827713520885909
+            },
+            "REC_WRONG": {
+              "eligible": 197,
+              "yields": 31,
+              "rate": 0.15736040609137056,
+              "ci_low": 0.11312818092331962,
+              "ci_high": 0.21470031675843554
+            }
+          }
+        }
+      }
+    },
+    "esi": {
+      "ses": {
+        "EXP": {
+          "E+": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 18,
+              "rate": 0.16363636363636364,
+              "ci_low": 0.10608722310923731,
+              "ci_high": 0.24388677585072116
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 30,
+              "rate": 0.3191489361702128,
+              "ci_low": 0.23361018709048176,
+              "ci_high": 0.4188893632030539
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 18,
+              "rate": 0.1651376146788991,
+              "ci_low": 0.1070860342222884,
+              "ci_high": 0.24598942730962886
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 31,
+              "rate": 0.32978723404255317,
+              "ci_low": 0.24307351447114595,
+              "ci_high": 0.42986723874629934
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 20,
+              "rate": 0.18181818181818182,
+              "ci_low": 0.12089480448542876,
+              "ci_high": 0.2642157350712887
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 14,
+              "rate": 0.14893617021276595,
+              "ci_low": 0.09083965063643759,
+              "ci_high": 0.23460065287454338
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 11,
+              "rate": 0.11702127659574468,
+              "ci_low": 0.0666129428495252,
+              "ci_high": 0.1975037518897268
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 17,
+              "rate": 0.15454545454545454,
+              "ci_low": 0.09878570478208984,
+              "ci_high": 0.23362002387948907
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 28,
+              "rate": 0.2978723404255319,
+              "ci_low": 0.21484309822217876,
+              "ci_high": 0.3967740462235376
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 16,
+              "rate": 0.14545454545454545,
+              "ci_low": 0.09155843665444212,
+              "ci_high": 0.2232790217087573
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 28,
+              "rate": 0.2978723404255319,
+              "ci_low": 0.21484309822217876,
+              "ci_high": 0.3967740462235376
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 19,
+              "rate": 0.17272727272727273,
+              "ci_low": 0.11345829455900079,
+              "ci_high": 0.25408397469933713
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "E+": {
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 13,
+              "rate": 0.11926605504587157,
+              "ci_low": 0.07103906424729986,
+              "ci_high": 0.19341659749446913
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 22,
+              "rate": 0.23404255319148937,
+              "ci_low": 0.15994105293764954,
+              "ci_high": 0.3290288739646088
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 20,
+              "rate": 0.2127659574468085,
+              "ci_low": 0.14216772302859196,
+              "ci_high": 0.305919798025847
+            },
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 13,
+              "rate": 0.11926605504587157,
+              "ci_low": 0.07103906424729986,
+              "ci_high": 0.19341659749446913
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 10,
+              "rate": 0.10638297872340426,
+              "ci_low": 0.058818256468396224,
+              "ci_high": 0.18485723534694615
+            },
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 17,
+              "rate": 0.1559633027522936,
+              "ci_low": 0.09971462165945087,
+              "ci_high": 0.23563687991443671
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 16,
+              "rate": 0.14545454545454545,
+              "ci_low": 0.09155843665444212,
+              "ci_high": 0.2232790217087573
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 13,
+              "rate": 0.13829787234042554,
+              "ci_low": 0.08263699831631924,
+              "ci_high": 0.22236210227075212
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 28,
+              "rate": 0.2978723404255319,
+              "ci_low": 0.21484309822217876,
+              "ci_high": 0.3967740462235376
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 18,
+              "rate": 0.16363636363636364,
+              "ci_low": 0.10608722310923731,
+              "ci_high": 0.24388677585072116
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 29,
+              "rate": 0.30851063829787234,
+              "ci_low": 0.22419957891141779,
+              "ci_high": 0.4078587684582082
+            },
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 16,
+              "rate": 0.14678899082568808,
+              "ci_low": 0.09241831740304014,
+              "ci_high": 0.22520922421281786
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "E+": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 18,
+              "rate": 0.19148936170212766,
+              "ci_low": 0.12470043241202647,
+              "ci_high": 0.2825046827945932
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 17,
+              "rate": 0.15454545454545454,
+              "ci_low": 0.09878570478208984,
+              "ci_high": 0.23362002387948907
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 15,
+              "rate": 0.13636363636363635,
+              "ci_low": 0.0844108182606438,
+              "ci_high": 0.2128583698041761
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 19,
+              "rate": 0.20212765957446807,
+              "ci_low": 0.13339378292301518,
+              "ci_high": 0.2942525352075141
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 14,
+              "rate": 0.14893617021276595,
+              "ci_low": 0.09083965063643759,
+              "ci_high": 0.23460065287454338
+            },
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 14,
+              "rate": 0.12727272727272726,
+              "ci_low": 0.07734910586208317,
+              "ci_high": 0.20235181190435725
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 14,
+              "rate": 0.12727272727272726,
+              "ci_low": 0.07734910586208317,
+              "ci_high": 0.20235181190435725
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 15,
+              "rate": 0.1595744680851064,
+              "ci_low": 0.09915526347591294,
+              "ci_high": 0.24672624295897774
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_DOWN": {
+              "eligible": 109,
+              "yields": 20,
+              "rate": 0.1834862385321101,
+              "ci_low": 0.12203581560283452,
+              "ci_high": 0.2664875658451421
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 23,
+              "rate": 0.24468085106382978,
+              "ci_low": 0.1689334300235954,
+              "ci_high": 0.3404776998025726
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "eligible": 110,
+              "yields": 17,
+              "rate": 0.15454545454545454,
+              "ci_low": 0.09878570478208984,
+              "ci_high": 0.23362002387948907
+            },
+            "REC_UP": {
+              "eligible": 94,
+              "yields": 31,
+              "rate": 0.32978723404255317,
+              "ci_low": 0.24307351447114595,
+              "ci_high": 0.42986723874629934
+            }
+          }
+        }
+      }
+    }
+  },
+  "paired_mcnemar_polarity": [
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "IMP",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9695431472081218,
+      "p_minus": 0.9695431472081218,
+      "b": 2,
+      "c": 2,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "EXP",
+      "rec_type": "REC_CORRECT",
+      "n": 198,
+      "p_plus": 0.9747474747474747,
+      "p_minus": 0.9747474747474747,
+      "b": 1,
+      "c": 1,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "EXP",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.15228426395939088,
+      "p_minus": 0.16751269035532995,
+      "b": 6,
+      "c": 9,
+      "p_value": 0.60723876953125,
+      "method": "exact_binomial",
+      "cohens_h": -0.04156033257235181
+    },
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "PRX",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.17258883248730963,
+      "p_minus": 0.17766497461928935,
+      "b": 7,
+      "c": 8,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.013355928121050575
+    },
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "IMP",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.15736040609137056,
+      "p_minus": 0.16243654822335024,
+      "b": 4,
+      "c": 5,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.013850267550413076
+    },
+    {
+      "task": "usmle",
+      "attribute": "ses",
+      "signal_type": "PRX",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9746192893401016,
+      "p_minus": 0.9796954314720813,
+      "b": 1,
+      "c": 2,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.03402840533380935
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "EXP",
+      "rec_type": "REC_CORRECT",
+      "n": 198,
+      "p_plus": 0.9797979797979798,
+      "p_minus": 0.9747474747474747,
+      "b": 1,
+      "c": 0,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.03394036667660405
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "EXP",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.17258883248730963,
+      "p_minus": 0.14720812182741116,
+      "b": 10,
+      "c": 5,
+      "p_value": 0.3017578125,
+      "method": "exact_binomial",
+      "cohens_h": 0.06929907154844739
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "PRX",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.17766497461928935,
+      "p_minus": 0.18781725888324874,
+      "b": 5,
+      "c": 7,
+      "p_value": 0.7744140625,
+      "method": "exact_binomial",
+      "cohens_h": -0.026272630407555453
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "PRX",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9695431472081218,
+      "p_minus": 0.9644670050761421,
+      "b": 2,
+      "c": 1,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.028438771179541078
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "IMP",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9695431472081218,
+      "p_minus": 0.9746192893401016,
+      "b": 1,
+      "c": 2,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.030844382232853906
+    },
+    {
+      "task": "usmle",
+      "attribute": "race",
+      "signal_type": "IMP",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.14720812182741116,
+      "p_minus": 0.14720812182741116,
+      "b": 8,
+      "c": 8,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "EXP",
+      "rec_type": "REC_WRONG",
+      "n": 198,
+      "p_plus": 0.15656565656565657,
+      "p_minus": 0.17676767676767677,
+      "b": 6,
+      "c": 10,
+      "p_value": 0.454498291015625,
+      "method": "exact_binomial",
+      "cohens_h": -0.05423031055738836
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "EXP",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9746192893401016,
+      "p_minus": 0.9746192893401016,
+      "b": 3,
+      "c": 3,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "PRX",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9796954314720813,
+      "p_minus": 0.9796954314720813,
+      "b": 1,
+      "c": 1,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "IMP",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.16243654822335024,
+      "p_minus": 0.15736040609137056,
+      "b": 8,
+      "c": 7,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.013850267550413076
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "PRX",
+      "rec_type": "REC_WRONG",
+      "n": 197,
+      "p_plus": 0.16243654822335024,
+      "p_minus": 0.17766497461928935,
+      "b": 6,
+      "c": 9,
+      "p_value": 0.60723876953125,
+      "method": "exact_binomial",
+      "cohens_h": -0.04054511994696286
+    },
+    {
+      "task": "usmle",
+      "attribute": "sex",
+      "signal_type": "IMP",
+      "rec_type": "REC_CORRECT",
+      "n": 197,
+      "p_plus": 0.9796954314720813,
+      "p_minus": 0.9644670050761421,
+      "b": 4,
+      "c": 1,
+      "p_value": 0.375,
+      "method": "exact_binomial",
+      "cohens_h": 0.09331155874620434
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "EXP",
+      "rec_type": "REC_DOWN",
+      "n": 109,
+      "p_plus": 0.1559633027522936,
+      "p_minus": 0.1651376146788991,
+      "b": 7,
+      "c": 8,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.024992559082179455
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "EXP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.3191489361702128,
+      "p_minus": 0.32978723404255317,
+      "b": 16,
+      "c": 17,
+      "p_value": 1.0,
+      "method": "chi_square_corrected",
+      "cohens_h": -0.022723566853825483
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "PRX",
+      "rec_type": "REC_DOWN",
+      "n": 110,
+      "p_plus": 0.18181818181818182,
+      "p_minus": 0.15454545454545454,
+      "b": 7,
+      "c": 4,
+      "p_value": 0.548828125,
+      "method": "exact_binomial",
+      "cohens_h": 0.07297078622971254
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "PRX",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.14893617021276595,
+      "p_minus": 0.11702127659574468,
+      "b": 6,
+      "c": 3,
+      "p_value": 0.5078125,
+      "method": "exact_binomial",
+      "cohens_h": 0.09414811127244271
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "IMP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.2978723404255319,
+      "p_minus": 0.2978723404255319,
+      "b": 12,
+      "c": 12,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "esi",
+      "attribute": "ses",
+      "signal_type": "IMP",
+      "rec_type": "REC_DOWN",
+      "n": 110,
+      "p_plus": 0.14545454545454545,
+      "p_minus": 0.17272727272727273,
+      "b": 4,
+      "c": 7,
+      "p_value": 0.548828125,
+      "method": "exact_binomial",
+      "cohens_h": -0.07462686425344034
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "EXP",
+      "rec_type": "REC_DOWN",
+      "n": 109,
+      "p_plus": 0.11926605504587157,
+      "p_minus": 0.11926605504587157,
+      "b": 5,
+      "c": 5,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "PRX",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.10638297872340426,
+      "p_minus": 0.13829787234042554,
+      "b": 3,
+      "c": 6,
+      "p_value": 0.5078125,
+      "method": "exact_binomial",
+      "cohens_h": -0.09759030368510946
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "PRX",
+      "rec_type": "REC_DOWN",
+      "n": 109,
+      "p_plus": 0.1559633027522936,
+      "p_minus": 0.14678899082568808,
+      "b": 4,
+      "c": 3,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.025599570893097612
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "EXP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.23404255319148937,
+      "p_minus": 0.2127659574468085,
+      "b": 10,
+      "c": 8,
+      "p_value": 0.8145294189453125,
+      "method": "exact_binomial",
+      "cohens_h": 0.0510938571245686
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "IMP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.2978723404255319,
+      "p_minus": 0.30851063829787234,
+      "b": 11,
+      "c": 12,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.023145786721182615
+    },
+    {
+      "task": "esi",
+      "attribute": "race",
+      "signal_type": "IMP",
+      "rec_type": "REC_DOWN",
+      "n": 109,
+      "p_plus": 0.1651376146788991,
+      "p_minus": 0.14678899082568808,
+      "b": 8,
+      "c": 6,
+      "p_value": 0.79052734375,
+      "method": "exact_binomial",
+      "cohens_h": 0.05059212997527707
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "EXP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.19148936170212766,
+      "p_minus": 0.20212765957446807,
+      "b": 8,
+      "c": 9,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.02675939111594927
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "EXP",
+      "rec_type": "REC_DOWN",
+      "n": 110,
+      "p_plus": 0.15454545454545454,
+      "p_minus": 0.13636363636363635,
+      "b": 7,
+      "c": 5,
+      "p_value": 0.7744140625,
+      "method": "exact_binomial",
+      "cohens_h": 0.051594155111313156
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "PRX",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.14893617021276595,
+      "p_minus": 0.1595744680851064,
+      "b": 7,
+      "c": 8,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": -0.029457189589583654
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "PRX",
+      "rec_type": "REC_DOWN",
+      "n": 110,
+      "p_plus": 0.12727272727272726,
+      "p_minus": 0.12727272727272726,
+      "b": 5,
+      "c": 5,
+      "p_value": 1.0,
+      "method": "exact_binomial",
+      "cohens_h": 0.0
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "IMP",
+      "rec_type": "REC_DOWN",
+      "n": 109,
+      "p_plus": 0.1834862385321101,
+      "p_minus": 0.1559633027522936,
+      "b": 12,
+      "c": 9,
+      "p_value": 0.6636238098144531,
+      "method": "exact_binomial",
+      "cohens_h": 0.07337279701094523
+    },
+    {
+      "task": "esi",
+      "attribute": "sex",
+      "signal_type": "IMP",
+      "rec_type": "REC_UP",
+      "n": 94,
+      "p_plus": 0.24468085106382978,
+      "p_minus": 0.32978723404255317,
+      "b": 7,
+      "c": 15,
+      "p_value": 0.13380050659179688,
+      "method": "exact_binomial",
+      "cohens_h": -0.18855758670677125
+    }
+  ],
+  "continuous_metrics": {
+    "esi": {
+      "ses": {
+        "IMP": {
+          "E+": {
+            "REC_DOWN": {
+              "mean": -0.05399971786596892,
+              "ci_low": -0.14207116882566445,
+              "ci_high": 0.02713636473109099,
+              "n": 197
+            },
+            "REC_UP": {
+              "mean": -0.04467119864770565,
+              "ci_low": -0.14360086462827892,
+              "ci_high": 0.053864070744863386,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "mean": -0.03504422076842114,
+              "ci_low": -0.12964501328733874,
+              "ci_high": 0.05506558990278257,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.06122059019840066,
+              "ci_low": -0.14732088377931488,
+              "ci_high": 0.02176499652166166,
+              "n": 198
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_UP": {
+              "mean": 0.30355488320598784,
+              "ci_low": 0.21549401011271163,
+              "ci_high": 0.39419155869075784,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.061039258899725314,
+              "ci_low": -0.15222206041797773,
+              "ci_high": 0.032888037893053876,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "mean": -0.13832205963491334,
+              "ci_low": -0.22881520906072236,
+              "ci_high": -0.04548165787690364,
+              "n": 198
+            },
+            "REC_UP": {
+              "mean": 0.28544836059548906,
+              "ci_low": 0.20231538991439296,
+              "ci_high": 0.36924114470525715,
+              "n": 197
+            }
+          }
+        },
+        "EXP": {
+          "E+": {
+            "REC_UP": {
+              "mean": -0.04146859867368563,
+              "ci_low": -0.13925084871064236,
+              "ci_high": 0.05328100123471364,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.023253741507136712,
+              "ci_low": -0.09961278733509894,
+              "ci_high": 0.052484246578299205,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "mean": -0.010316985373080732,
+              "ci_low": -0.09910379177244401,
+              "ci_high": 0.08092128962803483,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.02790556188728575,
+              "ci_low": -0.10545239365101056,
+              "ci_high": 0.052007257710907195,
+              "n": 197
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "E+": {
+            "REC_UP": {
+              "mean": 0.0730910965313796,
+              "ci_low": -0.01969859992451678,
+              "ci_high": 0.1626025742212081,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.1168469152323583,
+              "ci_low": -0.19636625066142166,
+              "ci_high": -0.02996992998329088,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "mean": 0.11364591616013484,
+              "ci_low": 0.025790034382826094,
+              "ci_high": 0.20377240128161817,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.10869179627905935,
+              "ci_low": -0.18936261651819838,
+              "ci_high": -0.024567494487812994,
+              "n": 197
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_UP": {
+              "mean": 0.259340777456526,
+              "ci_low": 0.17924138217850805,
+              "ci_high": 0.3404938245245673,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.1368081601683939,
+              "ci_low": -0.22380947267494475,
+              "ci_high": -0.05021802620683683,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "mean": -0.16468872116319538,
+              "ci_low": -0.2594294542258386,
+              "ci_high": -0.07120758444165527,
+              "n": 198
+            },
+            "REC_UP": {
+              "mean": 0.24953407989645887,
+              "ci_low": 0.1772011941090664,
+              "ci_high": 0.32845166950716953,
+              "n": 196
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_UP": {
+              "mean": -0.021366585871164984,
+              "ci_low": -0.10625296659011838,
+              "ci_high": 0.060956717279654085,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.03782832240316261,
+              "ci_low": -0.12165918817315163,
+              "ci_high": 0.05069412308112752,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "mean": -0.04846872020988805,
+              "ci_low": -0.12486459089693883,
+              "ci_high": 0.02096032771561646,
+              "n": 197
+            },
+            "REC_UP": {
+              "mean": -0.055409901908844504,
+              "ci_low": -0.13501340217316857,
+              "ci_high": 0.01749661152897035,
+              "n": 196
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "E+": {
+            "REC_UP": {
+              "mean": 0.1495373901199147,
+              "ci_low": 0.06756705598924723,
+              "ci_high": 0.23076902123958545,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.11246836816140612,
+              "ci_low": -0.20104216707045292,
+              "ci_high": -0.030158280034856832,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "mean": 0.1047689443532436,
+              "ci_low": 0.01704197977485085,
+              "ci_high": 0.18555893248420816,
+              "n": 197
+            },
+            "REC_DOWN": {
+              "mean": -0.1429941267377249,
+              "ci_low": -0.2243532965845751,
+              "ci_high": -0.06441511300702916,
+              "n": 197
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_UP": {
+              "mean": 0.24663972098577036,
+              "ci_low": 0.16785979622009878,
+              "ci_high": 0.3377349574752915,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.19509107963537792,
+              "ci_low": -0.28773883447459714,
+              "ci_high": -0.10230035144699898,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_DOWN": {
+              "mean": -0.18812661836088587,
+              "ci_low": -0.28080404871170495,
+              "ci_high": -0.09290944603385108,
+              "n": 198
+            },
+            "REC_UP": {
+              "mean": 0.24402126718603165,
+              "ci_low": 0.1564173435814481,
+              "ci_high": 0.33968904002178085,
+              "n": 196
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_UP": {
+              "mean": -0.022008179977550557,
+              "ci_low": -0.0959350069398655,
+              "ci_high": 0.05262774351632919,
+              "n": 195
+            },
+            "REC_DOWN": {
+              "mean": -0.015106283017536387,
+              "ci_low": -0.10431970500741244,
+              "ci_high": 0.07523838771273865,
+              "n": 196
+            }
+          },
+          "E-": {
+            "REC_UP": {
+              "mean": -0.059172454180356916,
+              "ci_low": -0.15277759050807513,
+              "ci_high": 0.03438620661910475,
+              "n": 196
+            },
+            "REC_DOWN": {
+              "mean": -0.03906871990992635,
+              "ci_low": -0.1253649400741688,
+              "ci_high": 0.04492905599108692,
+              "n": 197
+            }
+          }
+        }
+      }
+    },
+    "usmle": {
+      "ses": {
+        "IMP": {
+          "E+": {
+            "REC_CORRECT": {
+              "mean": 0.9666302157349408,
+              "ci_low": 0.9426006605237314,
+              "ci_high": 0.9870188464497479,
+              "n": 198
+            },
+            "REC_WRONG": {
+              "mean": 0.15331102051875836,
+              "ci_low": 0.106961654896325,
+              "ci_high": 0.2013771841794991,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.1558882850047146,
+              "ci_low": 0.10498042311230169,
+              "ci_high": 0.20757694550543446,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.97046916867924,
+              "ci_low": 0.9478836807815184,
+              "ci_high": 0.9893589105035412,
+              "n": 197
+            }
+          }
+        },
+        "EXP": {
+          "E+": {
+            "REC_CORRECT": {
+              "mean": 0.9728291634059768,
+              "ci_low": 0.9495771673270339,
+              "ci_high": 0.9925354296556744,
+              "n": 199
+            },
+            "REC_WRONG": {
+              "mean": 0.15035244804826373,
+              "ci_low": 0.10499642190715912,
+              "ci_high": 0.1997089416984779,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.15566599386988458,
+              "ci_low": 0.10656536444397727,
+              "ci_high": 0.2057791031465611,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.9720884745914916,
+              "ci_low": 0.9467810291732305,
+              "ci_high": 0.9916484060618209,
+              "n": 198
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_WRONG": {
+              "mean": 0.17578395217321546,
+              "ci_low": 0.12909902439839074,
+              "ci_high": 0.22995690290838258,
+              "n": 197
+            },
+            "REC_CORRECT": {
+              "mean": 0.9669997403289382,
+              "ci_low": 0.9436770207074608,
+              "ci_high": 0.9871403003781304,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.17100618900248518,
+              "ci_low": 0.12389820621816763,
+              "ci_high": 0.2261909855279803,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.9727547458667747,
+              "ci_low": 0.9504054880682957,
+              "ci_high": 0.9899279404416197,
+              "n": 198
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "E+": {
+            "REC_CORRECT": {
+              "mean": 0.9747435924948579,
+              "ci_low": 0.9514584731298823,
+              "ci_high": 0.9927894842961003,
+              "n": 198
+            },
+            "REC_WRONG": {
+              "mean": 0.16261546316831735,
+              "ci_low": 0.11693276292910754,
+              "ci_high": 0.2124735069575188,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "mean": 0.9701720539239318,
+              "ci_low": 0.9459794571878257,
+              "ci_high": 0.9900992758639802,
+              "n": 198
+            },
+            "REC_WRONG": {
+              "mean": 0.14710977449201623,
+              "ci_low": 0.10407127151652362,
+              "ci_high": 0.19744771235353845,
+              "n": 197
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_WRONG": {
+              "mean": 0.174552348267104,
+              "ci_low": 0.1279135558891946,
+              "ci_high": 0.2319638702330151,
+              "n": 197
+            },
+            "REC_CORRECT": {
+              "mean": 0.9671766612298269,
+              "ci_low": 0.9425406998554119,
+              "ci_high": 0.9866509885450855,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.17487369458725438,
+              "ci_low": 0.12480990963155379,
+              "ci_high": 0.22849324267316004,
+              "n": 197
+            },
+            "REC_CORRECT": {
+              "mean": 0.9635022532828627,
+              "ci_low": 0.9394540116518665,
+              "ci_high": 0.9850782435098627,
+              "n": 197
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_CORRECT": {
+              "mean": 0.967392893578624,
+              "ci_low": 0.9449277644722891,
+              "ci_high": 0.9870689041970683,
+              "n": 197
+            },
+            "REC_WRONG": {
+              "mean": 0.14691218315620214,
+              "ci_low": 0.10549212330791814,
+              "ci_high": 0.19627422070076783,
+              "n": 197
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.1496793968348708,
+              "ci_low": 0.10301861048736215,
+              "ci_high": 0.1989879482269821,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.9732639389765882,
+              "ci_low": 0.9506778678936554,
+              "ci_high": 0.9911149685634992,
+              "n": 197
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "E+": {
+            "REC_WRONG": {
+              "mean": 0.15729949797167292,
+              "ci_low": 0.10958686435959326,
+              "ci_high": 0.20495004769002512,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.968727810192159,
+              "ci_low": 0.9452408536302607,
+              "ci_high": 0.9869529413343324,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_WRONG": {
+              "mean": 0.17108151300505098,
+              "ci_low": 0.12033848432328516,
+              "ci_high": 0.2248065497367879,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.9716171955825832,
+              "ci_low": 0.948020192767861,
+              "ci_high": 0.9899011950860713,
+              "n": 198
+            }
+          }
+        },
+        "PRX": {
+          "E+": {
+            "REC_CORRECT": {
+              "mean": 0.9744213643729767,
+              "ci_low": 0.9525544664632817,
+              "ci_high": 0.9909127967428064,
+              "n": 197
+            },
+            "REC_WRONG": {
+              "mean": 0.16210050507380436,
+              "ci_low": 0.11456933096777454,
+              "ci_high": 0.21200631272690204,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "mean": 0.9763341749134018,
+              "ci_low": 0.9562190829709862,
+              "ci_high": 0.993377371138668,
+              "n": 197
+            },
+            "REC_WRONG": {
+              "mean": 0.1800216178809265,
+              "ci_low": 0.1347361697895412,
+              "ci_high": 0.23471205224302674,
+              "n": 197
+            }
+          }
+        },
+        "IMP": {
+          "E+": {
+            "REC_WRONG": {
+              "mean": 0.16117624984182255,
+              "ci_low": 0.11505289669321163,
+              "ci_high": 0.21440425255840817,
+              "n": 198
+            },
+            "REC_CORRECT": {
+              "mean": 0.9697576411897998,
+              "ci_low": 0.9463477611278569,
+              "ci_high": 0.9875668479085464,
+              "n": 198
+            }
+          },
+          "E-": {
+            "REC_CORRECT": {
+              "mean": 0.9639203340805055,
+              "ci_low": 0.9363353838211208,
+              "ci_high": 0.9855406900078775,
+              "n": 198
+            },
+            "REC_WRONG": {
+              "mean": 0.15501793804957872,
+              "ci_low": 0.1121721104783123,
+              "ci_high": 0.20508111336994103,
+              "n": 197
+            }
+          }
+        }
+      }
+    }
+  },
+  "signal_type_pooled": {
+    "esi": {
+      "IMP": {
+        "REC_DOWN": {
+          "mean": -0.04265032653402026,
+          "ci_low": -0.07759060025127106,
+          "ci_high": -0.010262336809732693,
+          "n": 1183
+        },
+        "REC_UP": {
+          "mean": -0.03963136150005334,
+          "ci_low": -0.0732256987105046,
+          "ci_high": -0.0039622998232931115,
+          "n": 1176
+        }
+      },
+      "PRX": {
+        "REC_UP": {
+          "mean": 0.26476948272156176,
+          "ci_low": 0.22994961659563848,
+          "ci_high": 0.2972484855142799,
+          "n": 1178
+        },
+        "REC_DOWN": {
+          "mean": -0.1473548606711078,
+          "ci_low": -0.18237687092107688,
+          "ci_high": -0.11132909721812571,
+          "n": 1187
+        }
+      },
+      "EXP": {
+        "REC_UP": {
+          "mean": 0.06480460791203017,
+          "ci_low": 0.02866855689208298,
+          "ci_high": 0.10031110488401952,
+          "n": 1181
+        },
+        "REC_DOWN": {
+          "mean": -0.08863810158333596,
+          "ci_low": -0.12066478442617264,
+          "ci_high": -0.05642371237108568,
+          "n": 1183
+        }
+      }
+    },
+    "usmle": {
+      "IMP": {
+        "REC_CORRECT": {
+          "mean": 0.9685678008963932,
+          "ci_low": 0.958789127253975,
+          "ci_high": 0.9764370806958651,
+          "n": 1185
+        },
+        "REC_WRONG": {
+          "mean": 0.1536690323988633,
+          "ci_low": 0.13551407970209106,
+          "ci_high": 0.1734733867705256,
+          "n": 1185
+        }
+      },
+      "EXP": {
+        "REC_CORRECT": {
+          "mean": 0.9716973344165046,
+          "ci_low": 0.9627882708483627,
+          "ci_high": 0.979922748541203,
+          "n": 1189
+        },
+        "REC_WRONG": {
+          "mean": 0.15736865641432587,
+          "ci_low": 0.13717394190764182,
+          "ci_high": 0.17668457983503327,
+          "n": 1186
+        }
+      },
+      "PRX": {
+        "REC_WRONG": {
+          "mean": 0.17304539963689178,
+          "ci_low": 0.1514557620791739,
+          "ci_high": 0.19451855144874655,
+          "n": 1184
+        },
+        "REC_CORRECT": {
+          "mean": 0.9701977640085037,
+          "ci_low": 0.9609685045385484,
+          "ci_high": 0.978028296247824,
+          "n": 1184
+        }
+      }
+    }
+  }
+}

@@ -73,8 +73,30 @@ AGENT_B_MODELS: Final[tuple[AgentBModel, ...]] = (
 
 AGENT_B_MODEL_IDS: Final[dict[str, str]] = {model.display_name: model.hf_identifier for model in AGENT_B_MODELS}
 
-BASELINE_TEMPERATURE: Final[float] = 0.8
+BASELINE_TEMPERATURE: Final[float] = 0.0
+# CHANGED from 0.8. Verified live during this project: FairMedQA/AMQA --
+# the paper this project's entire metric framework (CFR, AD, McNemar) is
+# built on and compared against -- explicitly states "we set the
+# temperature to 0.0 for all model queries... to ensure stable and
+# deterministic outputs," for both their generation and evaluation steps.
+# At temperature>0, the same input can sample a different output on
+# repeated identical calls, meaning some of any observed E+ vs. E-
+# difference is guaranteed sampling noise, not signal -- this was directly
+# implicated in this project's own reversion-fraction sparsity problem
+# (35 of 37 cases showed zero shift on either side; the aggregate was
+# driven by 1-2 non-zero cases). temperature=0.0 removes that noise
+# source and makes CFR/AD numbers genuinely comparable to FairMedQA's own
+# published values, rather than an apples-to-oranges comparison.
 EXPERIMENT_5_LOW_TEMPERATURE: Final[float] = 0.2
+EXPLORATORY_HIGH_TEMPERATURE: Final[float] = 0.8
+# NEW: the project's OLD baseline (0.8), kept as a documented, deliberate
+# SECONDARY condition -- not discarded. Okawa (2026, already in this
+# project's own reading list) treats temperature as a genuine independent
+# variable, not just noise to eliminate: her finding is that temperature
+# itself controls how readily bias amplifies in multi-agent settings.
+# This constant exists so that question stays testable (alongside
+# EXPERIMENT_5_LOW_TEMPERATURE=0.2) without it being confused for the
+# primary measurement temperature.
 
 MAX_VALIDATION_REGENERATION_ATTEMPTS: Final[int] = 2
 
@@ -94,6 +116,7 @@ class PipelineConfig:
     agent_b_models: tuple[AgentBModel, ...] = field(default_factory=lambda: AGENT_B_MODELS)
     baseline_temperature: float = BASELINE_TEMPERATURE
     experiment_5_low_temperature: float = EXPERIMENT_5_LOW_TEMPERATURE
+    exploratory_high_temperature: float = EXPLORATORY_HIGH_TEMPERATURE
     max_validation_regeneration_attempts: int = MAX_VALIDATION_REGENERATION_ATTEMPTS
     n_cases_go_no_go: int = N_CASES_GO_NO_GO
     n_cases_publishability: int = N_CASES_PUBLISHABILITY
@@ -151,7 +174,7 @@ __all__ = [
     "GENERATOR_MODEL_ID", "VALIDATOR_MODEL_ID",
     "GENERATOR_MODEL_PRICE_PER_1M_INPUT_USD", "GENERATOR_MODEL_PRICE_PER_1M_OUTPUT_USD",
     "AgentBModel", "AGENT_B_MODELS", "AGENT_B_MODEL_IDS",
-    "BASELINE_TEMPERATURE", "EXPERIMENT_5_LOW_TEMPERATURE", "MAX_VALIDATION_REGENERATION_ATTEMPTS",
+    "BASELINE_TEMPERATURE", "EXPERIMENT_5_LOW_TEMPERATURE", "EXPLORATORY_HIGH_TEMPERATURE", "MAX_VALIDATION_REGENERATION_ATTEMPTS",
     "N_CASES_GO_NO_GO", "N_CASES_PUBLISHABILITY", "PipelineConfig", "get_config",
     "_is_content_filter_error",
 ]

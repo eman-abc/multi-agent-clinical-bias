@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -134,6 +135,17 @@ class ObservationRecord:
     class_probabilities: dict[str, float] | None
     validation_passed: bool | None
     blocked_reason: str | None
+    logprobs_available: bool | None = None
+    # NEW field, part of the uniqueness key below. Without this, switching
+    # from the one-hot Chat-Completions path to the new real-logprobs path
+    # (both producing a record at the SAME temperature) would silently
+    # collide: the checkpoint would see "already have this (case,
+    # condition, ..., temperature)" and skip calling Agent B again --
+    # meaning re-running after wiring in logprobs would just keep the old
+    # one-hot data forever rather than ever collecting the new
+    # measurement. Including this in key() makes a logprobs observation
+    # and a one-hot observation at the same temperature genuinely
+    # distinct, non-colliding entries.
 
     def key(self) -> str:
         """Unique key for resumability/dedup checkpointing."""
@@ -147,6 +159,7 @@ class ObservationRecord:
                 self.model,
                 self.task,
                 str(self.temperature),
+                str(self.logprobs_available),
             ]
         )
 
@@ -286,11 +299,17 @@ def _probe_records(
     models: list[AgentBModel],
     tasks: tuple[str, ...],
     temperature: float,
+    logprobs_available: bool,
 ) -> list[ObservationRecord]:
     """
     Build the (model, task) ObservationRecords a spec WOULD produce, for
     existence-checking only (the non-key fields are dummy values -- key()
-    doesn't depend on them).
+    doesn't depend on them, EXCEPT logprobs_available, which now IS part
+    of key() -- see ObservationRecord. Must match the measurement method
+    actually configured for this run, or every probe would silently
+    mismatch every real stored record (all real records have True/False,
+    never the omitted-default None), making _generation_needed always
+    return True and wastefully regenerate notes on every resumed run.
     """
     return [
         ObservationRecord(
@@ -306,6 +325,7 @@ def _probe_records(
             class_probabilities=None,
             validation_passed=None,
             blocked_reason=None,
+            logprobs_available=logprobs_available,
         )
         for model in models
         for task in tasks
@@ -322,6 +342,7 @@ def _generation_needed(
     models: list[AgentBModel],
     tasks: tuple[str, ...],
     temperature: float,
+    logprobs_available: bool,
 ) -> bool:
     """
     True unless EVERY downstream Agent B record this spec would produce is
@@ -336,6 +357,7 @@ def _generation_needed(
         models=models,
         tasks=tasks,
         temperature=temperature,
+        logprobs_available=logprobs_available,
     )
     return not all(checkpoint.has(r) for r in probes)
 
@@ -375,6 +397,176 @@ def _record_blocked(
 # ---------------------------------------------------------------------------
 
 
+def _process_one_case_for_sweep(
+    case: AMQARecord,
+    *,
+    attributes: list[Attribute],
+    condition_builder: Callable[[str, Attribute], list[cond.ConditionSpec]],
+    experiment_name: str,
+    models: list[AgentBModel | str],
+    use_chat_completions: bool,
+    use_logprobs: bool,
+    dry_run: bool | None,
+    temperature: float,
+    checkpoint: "JSONLCheckpoint",
+) -> tuple[list[ObservationRecord], dict]:
+    """
+    Process EVERY attribute/spec/condition/model/task for ONE case --
+    fully independent of every other case, making this the natural unit
+    of parallelism (see the threading note on _run_signal_and_attribute_sweep).
+
+    Returns (records_to_append, local_counts) rather than mutating
+    `checkpoint`, a shared tracker, or shared blocked_counts/
+    content_filter_blocks directly -- this is what makes it safe to run
+    inside a worker thread with ZERO locks needed anywhere: checkpoint.has()
+    is read-only (safe to call concurrently, since nothing mutates
+    checkpoint._seen_keys during the parallel phase -- only the caller,
+    sequentially, after every worker has returned), and every actual
+    mutation (checkpoint.append(), tracker increments, blocked_counts
+    updates) happens back in the calling thread, one case's results at a
+    time, never interleaved across cases.
+
+    Reordering the original attribute-outer/case-inner loop to case-outer/
+    attribute-inner (this function handles all attributes for ONE case)
+    is also what keeps neutral_cache/paraphrase_cache correct under
+    threading with no changes to their logic at all: since one worker
+    thread now handles every attribute for a given case sequentially,
+    the cache stays purely LOCAL to this one case's processing -- no
+    cross-thread cache access, no cache-related race condition to
+    reason about.
+    """
+    records_to_append: list[ObservationRecord] = []
+    local_counts = {
+        "agent_a": 0, "agent_b": 0, "validation": 0,
+        "content_filter_blocks": 0, "blocked_counts": {},
+    }
+    neutral_cache: dict[str, pipe.ValidatedNote] = {}
+    paraphrase_cache: dict[str, pipe.ValidatedNote] = {}
+
+    for attribute in attributes:
+        matrix = condition_builder(case.question_id, attribute)
+        for spec in matrix:
+            is_neutral = spec.condition_label is cond.ConditionLabel.NEUTRAL
+            is_paraphrase = spec.condition_label is cond.ConditionLabel.PARAPHRASE
+
+            if not _generation_needed(
+                checkpoint,
+                experiment=experiment_name,
+                case_id=case.question_id,
+                attribute=attribute.value,
+                spec=spec,
+                models=models,
+                tasks=TASKS,
+                temperature=temperature,
+                logprobs_available=use_chat_completions and use_logprobs,
+            ):
+                continue
+
+            if is_neutral and case.question_id in neutral_cache:
+                validated = neutral_cache[case.question_id]
+            elif is_paraphrase and case.question_id in paraphrase_cache:
+                validated = paraphrase_cache[case.question_id]
+            else:
+                try:
+                    if is_paraphrase:
+                        validated = pipe.generate_note(
+                            case, spec, neutral_note=neutral_cache.get(case.question_id), dry_run=dry_run
+                        )
+                    else:
+                        validated = pipe.generate_note(case, spec, dry_run=dry_run)
+                except (pipe.UnimplementedConditionError, NotImplementedError) as exc:
+                    blocked_key = (
+                        f"{attribute.value}:{spec.condition_label.value}:"
+                        f"{spec.signal_type.value if spec.signal_type else 'None'}"
+                    )
+                    local_counts["blocked_counts"][blocked_key] = local_counts["blocked_counts"].get(blocked_key, 0) + 1
+                    blocked_record = ObservationRecord(
+                        experiment=experiment_name, case_id=case.question_id, attribute=attribute.value,
+                        condition_label=spec.condition_label.value,
+                        signal_type=spec.signal_type.value if spec.signal_type else None,
+                        model="n/a", task="n/a", temperature=temperature, top_class=None,
+                        class_probabilities=None, validation_passed=None, blocked_reason=str(exc),
+                    )
+                    if not checkpoint.has(blocked_record):
+                        records_to_append.append(blocked_record)
+                    continue
+                local_counts["agent_a"] += 1
+                local_counts["validation"] += _validation_calls_for(spec)
+
+                if validated.blocked_reason:
+                    blocked_key = f"{attribute.value}:{spec.condition_label.value}:{spec.signal_type.value if spec.signal_type else 'None'}"
+                    local_counts["blocked_counts"][blocked_key] = local_counts["blocked_counts"].get(blocked_key, 0) + 1
+                    blocked_record = ObservationRecord(
+                        experiment=experiment_name, case_id=case.question_id, attribute=attribute.value,
+                        condition_label=spec.condition_label.value,
+                        signal_type=spec.signal_type.value if spec.signal_type else None,
+                        model="n/a", task="n/a", temperature=temperature, top_class=None,
+                        class_probabilities=None, validation_passed=None, blocked_reason=validated.blocked_reason,
+                    )
+                    if not checkpoint.has(blocked_record):
+                        records_to_append.append(blocked_record)
+                    continue
+
+                if is_neutral:
+                    neutral_cache[case.question_id] = validated
+                elif is_paraphrase:
+                    paraphrase_cache[case.question_id] = validated
+
+            for model in models:
+                for task in TASKS:
+                    record = ObservationRecord(
+                        experiment=experiment_name,
+                        case_id=case.question_id,
+                        attribute=attribute.value,
+                        condition_label=spec.condition_label.value,
+                        signal_type=spec.signal_type.value if spec.signal_type else None,
+                        model=_model_display_name(model),
+                        task=task,
+                        temperature=temperature,
+                        top_class=None,
+                        class_probabilities=None,
+                        validation_passed=validated.validation_passed,
+                        blocked_reason=None,
+                        logprobs_available=use_chat_completions and use_logprobs,
+                    )
+                    if checkpoint.has(record):
+                        continue
+                    if use_chat_completions:
+                        if task == "esi":
+                            esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
+                            result = _call_chat_completions_safe(
+                                esi_fn, validated.note_text, model=model, temperature=temperature,
+                            )
+                        else:
+                            usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
+                            result = _call_chat_completions_safe(
+                                usmle_fn, validated.note_text, case.neutralised_question, case.options,
+                                model=model, temperature=temperature,
+                            )
+                        local_counts["agent_b"] += 1
+                        if result is None:
+                            local_counts["content_filter_blocks"] += 1
+                            record.blocked_reason = "content_filter_azure"
+                            records_to_append.append(record)
+                            continue
+                    elif task == "esi":
+                        result = inf.run_esi_triage(
+                            validated.note_text, model=model, temperature=temperature, dry_run=dry_run
+                        )
+                        local_counts["agent_b"] += 1
+                    else:
+                        result = inf.run_usmle_diagnostic(
+                            validated.note_text, case.neutralised_question, case.options,
+                            model=model, temperature=temperature, dry_run=dry_run,
+                        )
+                        local_counts["agent_b"] += 1
+                    record.top_class = result.top_class
+                    record.class_probabilities = result.class_probabilities
+                    records_to_append.append(record)
+
+    return records_to_append, local_counts
+
+
 def _run_signal_and_attribute_sweep(
     *,
     experiment_name: str,
@@ -386,18 +578,48 @@ def _run_signal_and_attribute_sweep(
     temperature: float,
     models: list[AgentBModel] | None = None,
     use_chat_completions: bool = False,
+    use_logprobs: bool = True,
     chat_completions_model: str = "gpt-5.4-mini",
+    max_workers: int = 5,
 ) -> ExperimentRunResult:
     """
-    `use_chat_completions`: route Agent B through the Chat-Completions
-    fallback (shared/inference_engine.py's run_esi_triage_chat_completions /
-    run_usmle_diagnostic_chat_completions) instead of the logprobs-based
-    legacy-Completions functions -- for running this experiment live against
-    an OpenAI/Azure-family model BEFORE GPU/open-weight access is ready.
-    `models` is ignored when this is True; the single `chat_completions_model`
-    string is used instead of the AGENT_B_MODELS list. Every downstream
-    metrics function in shared/metrics.py reads `model` as an opaque string
-    key and needs no changes to consume either kind of run.
+    `use_chat_completions`: route Agent B through Chat Completions instead
+    of the legacy-Completions functions (run_esi_triage/run_usmle_diagnostic)
+    -- for running this experiment live against an OpenAI/Azure-family
+    model BEFORE GPU/open-weight access is ready.
+
+    `use_logprobs` (only meaningful when use_chat_completions=True):
+    True (default) uses run_esi_triage_chat_completions_logprobs /
+    run_usmle_diagnostic_chat_completions_logprobs -- confirmed live to
+    return genuine multi-class probability distributions on this
+    project's Azure gpt-5.4-mini deployment (verified: an 85%/15% split
+    across two ESI classes on a realistic, non-trivial vignette, not a
+    forced single-token result). False uses the older one-hot text-parsing
+    functions (run_esi_triage_chat_completions /
+    run_usmle_diagnostic_chat_completions) -- kept available for direct
+    comparison, not because logprobs are unavailable.
+
+    `models` is ignored when use_chat_completions is True; the single
+    `chat_completions_model` string is used instead of the AGENT_B_MODELS
+    list. Every downstream metrics function in shared/metrics.py reads
+    `model` as an opaque string key and needs no changes to consume any
+    of these variants.
+
+    `max_workers`: cases are processed concurrently via a thread pool
+    (each case is fully independent of every other -- the natural unit of
+    parallelism for I/O-bound API calls). Default 5, deliberately modest
+    -- Azure/OpenAI enforce real rate limits, and too high a value trades
+    a faster wall-clock time for 429 rate-limit errors instead. Set to 1
+    to fall back to strictly sequential execution (e.g. for easier
+    debugging of a specific failure). Correctness under concurrency is by
+    DESIGN, not locks: _process_one_case_for_sweep never mutates
+    `checkpoint`, `tracker`, `blocked_counts`, or `content_filter_blocks`
+    directly -- it only reads checkpoint.has() (safe to call concurrently,
+    since nothing mutates checkpoint._seen_keys during the parallel phase)
+    and returns plain data. Every actual mutation happens back in THIS
+    function, sequentially, one case's results at a time, as each worker
+    completes -- so no two threads ever touch shared state at the same
+    time, and no lock is needed anywhere.
     """
     tracker = APICallTracker()
     checkpoint = JSONLCheckpoint(checkpoint_path)
@@ -408,155 +630,38 @@ def _run_signal_and_attribute_sweep(
     amqa_records = load_amqa_dataset(dry_run=dry_run, mock_n=max(n_cases, 1))
     cases = sample_cases(amqa_records, n_cases, seed=42)
 
-    # Attribute-independent cache: N (no carrier at all) and P (paraphrase,
-    # matched against a fixed SES/PRX reference regardless of which attribute
-    # is being studied -- see crew_pipeline.generate_paraphrase_note's
-    # docstring) don't depend on the attribute -- generate each once per
-    # case, reuse across all three attribute sweeps.
-    neutral_cache: dict[str, pipe.ValidatedNote] = {}
-    paraphrase_cache: dict[str, pipe.ValidatedNote] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                _process_one_case_for_sweep,
+                case,
+                attributes=attributes,
+                condition_builder=condition_builder,
+                experiment_name=experiment_name,
+                models=models,
+                use_chat_completions=use_chat_completions,
+                use_logprobs=use_logprobs,
+                dry_run=dry_run,
+                temperature=temperature,
+                checkpoint=checkpoint,
+            ): case
+            for case in cases
+        }
+        for future in as_completed(futures):
+            # .result() re-raises any exception from the worker thread here,
+            # in the main thread -- a real error (not a content-filter block,
+            # which is already handled inside the worker) still stops the
+            # run, exactly as it would have sequentially.
+            records_to_append, local_counts = future.result()
 
-    for attribute in attributes:
-        for case in cases:
-            matrix = condition_builder(case.question_id, attribute)
-            for spec in matrix:
-                is_neutral = spec.condition_label is cond.ConditionLabel.NEUTRAL
-                is_paraphrase = spec.condition_label is cond.ConditionLabel.PARAPHRASE
-
-                # Resumability: skip generation entirely if every downstream
-                # Agent B record for this spec is already checkpointed --
-                # otherwise a resumed run would needlessly re-bill Agent A +
-                # the Validator for a note whose decisions are all already on
-                # disk (agent_b_calls was already being skipped per-record
-                # below, but agent_a/validation calls were not -- fixed here).
-                if not _generation_needed(
-                    checkpoint,
-                    experiment=experiment_name,
-                    case_id=case.question_id,
-                    attribute=attribute.value,
-                    spec=spec,
-                    models=models,
-                    tasks=TASKS,
-                    temperature=temperature,
-                ):
-                    continue
-
-                if is_neutral and case.question_id in neutral_cache:
-                    validated = neutral_cache[case.question_id]
-                elif is_paraphrase and case.question_id in paraphrase_cache:
-                    validated = paraphrase_cache[case.question_id]
-                else:
-                    try:
-                        if is_paraphrase:
-                            # Pass the cached N through if we have it, so P
-                            # doesn't trigger its own redundant N generation
-                            # (crew_pipeline.generate_paraphrase_note falls
-                            # back to generating N itself only if omitted).
-                            validated = pipe.generate_note(
-                                case, spec, neutral_note=neutral_cache.get(case.question_id), dry_run=dry_run
-                            )
-                        else:
-                            validated = pipe.generate_note(case, spec, dry_run=dry_run)
-                    except (pipe.UnimplementedConditionError, NotImplementedError) as exc:
-                        blocked_key = (
-                            f"{attribute.value}:{spec.condition_label.value}:"
-                            f"{spec.signal_type.value if spec.signal_type else 'None'}"
-                        )
-                        blocked_counts[blocked_key] = blocked_counts.get(blocked_key, 0) + 1
-                        _record_blocked(
-                            checkpoint,
-                            experiment=experiment_name,
-                            case_id=case.question_id,
-                            attribute=attribute.value,
-                            spec=spec,
-                            reason=str(exc),
-                            temperature=temperature,
-                        )
-                        continue
-                    tracker.record_generation()
-                    tracker.record_validation(_validation_calls_for(spec))
-
-                    if validated.blocked_reason:
-                        # Content-filter block (or similar) from
-                        # crew_pipeline.py's generation/validation layer --
-                        # note_text is empty/unusable. MUST be checked
-                        # BEFORE caching below: caching a blocked N here
-                        # crashed a live run -- P later retrieved this
-                        # cached, empty "neutral note" and tried to
-                        # paraphrase zero tokens, raising
-                        # token_edit_distance_pct's "original_tokens is
-                        # empty" ValueError and killing the whole batch.
-                        blocked_key = f"{attribute.value}:{spec.condition_label.value}:{spec.signal_type.value if spec.signal_type else 'None'}"
-                        blocked_counts[blocked_key] = blocked_counts.get(blocked_key, 0) + 1
-                        _record_blocked(
-                            checkpoint, experiment=experiment_name, case_id=case.question_id,
-                            attribute=attribute.value, spec=spec, reason=validated.blocked_reason,
-                            temperature=temperature,
-                        )
-                        continue
-
-                    if is_neutral:
-                        neutral_cache[case.question_id] = validated
-                    elif is_paraphrase:
-                        paraphrase_cache[case.question_id] = validated
-
-                for model in models:
-                    for task in TASKS:
-                        record = ObservationRecord(
-                            experiment=experiment_name,
-                            case_id=case.question_id,
-                            attribute=attribute.value,
-                            condition_label=spec.condition_label.value,
-                            signal_type=spec.signal_type.value if spec.signal_type else None,
-                            model=_model_display_name(model),
-                            task=task,
-                            temperature=temperature,
-                            top_class=None,
-                            class_probabilities=None,
-                            validation_passed=validated.validation_passed,
-                            blocked_reason=None,
-                        )
-                        if checkpoint.has(record):
-                            continue
-                        if use_chat_completions:
-                            if task == "esi":
-                                result = _call_chat_completions_safe(
-                                    inf.run_esi_triage_chat_completions,
-                                    validated.note_text, model=model, temperature=temperature,
-                                )
-                            else:
-                                result = _call_chat_completions_safe(
-                                    inf.run_usmle_diagnostic_chat_completions,
-                                    validated.note_text,
-                                    case.neutralised_question,  # see module docstring, decision #1
-                                    case.options,
-                                    model=model,
-                                    temperature=temperature,
-                                )
-                            tracker.record_inference()
-                            if result is None:
-                                content_filter_blocks += 1
-                                record.blocked_reason = "content_filter_azure"
-                                checkpoint.append(record)
-                                continue
-                        elif task == "esi":
-                            result = inf.run_esi_triage(
-                                validated.note_text, model=model, temperature=temperature, dry_run=dry_run
-                            )
-                            tracker.record_inference()
-                        else:
-                            result = inf.run_usmle_diagnostic(
-                                validated.note_text,
-                                case.neutralised_question,  # see module docstring, decision #1
-                                case.options,
-                                model=model,
-                                temperature=temperature,
-                                dry_run=dry_run,
-                            )
-                            tracker.record_inference()
-                        record.top_class = result.top_class
-                        record.class_probabilities = result.class_probabilities
-                        checkpoint.append(record)
+            for record in records_to_append:
+                checkpoint.append(record)
+            tracker.record_generation(local_counts["agent_a"])
+            tracker.record_validation(local_counts["validation"])
+            tracker.record_inference(local_counts["agent_b"])
+            content_filter_blocks += local_counts["content_filter_blocks"]
+            for key, count in local_counts["blocked_counts"].items():
+                blocked_counts[key] = blocked_counts.get(key, 0) + count
 
     compare_to_budget(experiment_name, tracker)
     return ExperimentRunResult(
@@ -576,7 +681,9 @@ def run_experiment_1(
     dry_run: bool | None = None,
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
+    use_logprobs: bool = True,
     chat_completions_model: str = "gpt-5.4-mini",
+    max_workers: int = 5,
 ) -> ExperimentRunResult:
     """Experiment 1 (§11) — signal-type gradient: EXP/PRX/IMP x polarity + N + P, all 3 attributes (SES first), both tasks."""
     return _run_signal_and_attribute_sweep(
@@ -588,6 +695,8 @@ def run_experiment_1(
         dry_run=dry_run,
         temperature=temperature,
         use_chat_completions=use_chat_completions,
+        use_logprobs=use_logprobs,
+        max_workers=max_workers,
         chat_completions_model=chat_completions_model,
     )
 
@@ -599,7 +708,9 @@ def run_experiment_2(
     dry_run: bool | None = None,
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
+    use_logprobs: bool = True,
     chat_completions_model: str = "gpt-5.4-mini",
+    max_workers: int = 5,
 ) -> ExperimentRunResult:
     """Experiment 2 (§11) — cross-attribute replication: E+/E-/N/P using PRX carrier only, all 3 attributes, both tasks."""
     return _run_signal_and_attribute_sweep(
@@ -609,6 +720,8 @@ def run_experiment_2(
         checkpoint_path=checkpoint_path,
         n_cases=n_cases,
         dry_run=dry_run,
+        use_logprobs=use_logprobs,
+        max_workers=max_workers,
         temperature=temperature,
         use_chat_completions=use_chat_completions,
         chat_completions_model=chat_completions_model,
@@ -627,6 +740,7 @@ def run_experiment_3(
     dry_run: bool | None = None,
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
+    use_logprobs: bool = True,
     chat_completions_model: str = "gpt-5.4-mini",
 ) -> ExperimentRunResult:
     """
@@ -654,6 +768,7 @@ def run_experiment_3(
                 models=models,
                 tasks=TASKS,
                 temperature=temperature,
+                logprobs_available=use_chat_completions and use_logprobs,
             ):
                 continue
 
@@ -684,18 +799,21 @@ def run_experiment_3(
                         class_probabilities=None,
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
+                        logprobs_available=use_chat_completions and use_logprobs,
                     )
                     if checkpoint.has(record):
                         continue
                     if use_chat_completions:
                         if task == "esi":
+                            esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
                             result = _call_chat_completions_safe(
-                                inf.run_esi_triage_chat_completions,
+                                esi_fn,
                                 validated.note_text, model=model, temperature=temperature,
                             )
                         else:
+                            usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
                             result = _call_chat_completions_safe(
-                                inf.run_usmle_diagnostic_chat_completions,
+                                usmle_fn,
                                 validated.note_text,
                                 case.neutralised_question,
                                 case.options,
@@ -764,6 +882,7 @@ def run_experiment_rec(
     n_cases: int = N_CASES_GO_NO_GO,
     dry_run: bool | None = None,
     temperature: float = BASELINE_TEMPERATURE,
+    use_logprobs: bool = True,
     chat_completions_model: str = "gpt-5.4-mini",
     run_combined_context_on_rec_wrong: bool = True,
 ) -> ExperimentRunResult:
@@ -803,6 +922,7 @@ def run_experiment_rec(
                 models=[model],
                 tasks=TASKS,
                 temperature=temperature,
+                logprobs_available=use_logprobs,
             ):
                 continue
 
@@ -847,12 +967,14 @@ def run_experiment_rec(
                     class_probabilities=None,
                     validation_passed=validated.validation_passed,
                     blocked_reason=None,
+                    logprobs_available=use_logprobs,
                 )
                 if checkpoint.has(record):
                     continue
                 if task == "esi":
+                    esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
                     result = _call_chat_completions_safe(
-                        inf.run_esi_triage_chat_completions,
+                        esi_fn,
                         validated.note_text, model=model, temperature=temperature,
                     )
                     tracker.record_inference()
@@ -863,8 +985,9 @@ def run_experiment_rec(
                         continue
                     esi_top_class = result.top_class
                 else:
+                    usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
                     result = _call_chat_completions_safe(
-                        inf.run_usmle_diagnostic_chat_completions,
+                        usmle_fn,
                         validated.note_text, case.neutralised_question, case.options,
                         model=model, temperature=temperature,
                     )
@@ -885,16 +1008,19 @@ def run_experiment_rec(
                     condition_label=spec.condition_label.value, signal_type=None, model=model,
                     task="esi_combined", temperature=temperature, top_class=None,
                     class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
+                    logprobs_available=use_logprobs,
                 )
                 combined_usmle_record = ObservationRecord(
                     experiment="experiment_rec", case_id=case.question_id, attribute=None,
                     condition_label=spec.condition_label.value, signal_type=None, model=model,
                     task="usmle_combined", temperature=temperature, top_class=None,
                     class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
+                    logprobs_available=use_logprobs,
                 )
                 if not (checkpoint.has(combined_esi_record) and checkpoint.has(combined_usmle_record)):
+                    combined_fn = inf.run_esi_then_usmle_combined_chat_completions_logprobs if use_logprobs else inf.run_esi_then_usmle_combined_chat_completions
                     combined = _call_chat_completions_safe(
-                        inf.run_esi_then_usmle_combined_chat_completions,
+                        combined_fn,
                         validated.note_text, case.neutralised_question, case.options,
                         model=model, temperature=temperature,
                     )
@@ -1001,6 +1127,7 @@ def run_experiment_5(
                     models=list(AGENT_B_MODELS),
                     tasks=("esi",),  # ESI only, per spec
                     temperature=temperature,
+                    logprobs_available=True,  # legacy Completions path -- genuine logprobs when the server returns them
                 ):
                     continue
 
@@ -1022,6 +1149,7 @@ def run_experiment_5(
                         class_probabilities=None,
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
+                        logprobs_available=True,
                     )
                     if checkpoint.has(record):
                         continue
@@ -1153,6 +1281,7 @@ def run_experiment_6(
             models=[llama],
             tasks=("esi_cot", "usmle_cot"),
             temperature=temperature,
+            logprobs_available=None,  # CoT/free-text -- no class distribution concept applies at all
         ):
             continue
 
