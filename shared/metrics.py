@@ -347,6 +347,14 @@ def wilson_ci(yields: int, eligible: int, z: float = 1.96) -> tuple[float, float
     approximation at the small n (20-40 per cell) this project's REC-
     conformity and conditional-sycophancy metrics operate at. Returns
     (point_estimate, ci_low, ci_high), all in [0,1].
+
+    lo/hi are explicitly clamped to include p exactly -- confirmed live:
+    at y==eligible (a perfect 100% rate), floating-point rounding in the
+    center+half_width formula can produce hi=0.9999999999999999 instead
+    of exactly 1.0, making (hi - p) a tiny NEGATIVE number. Callers that
+    feed this straight into matplotlib's yerr (which requires yerr >= 0)
+    crash on this -- clamping here fixes it at the source rather than
+    requiring every caller to defensively re-clamp.
     """
     if eligible == 0:
         return (0.0, 0.0, 0.0)
@@ -354,7 +362,9 @@ def wilson_ci(yields: int, eligible: int, z: float = 1.96) -> tuple[float, float
     denom = 1 + z**2 / eligible
     center = (p + z**2 / (2 * eligible)) / denom
     half_width = (z * math.sqrt((p * (1 - p) + z**2 / (4 * eligible)) / eligible)) / denom
-    return (p, max(0.0, center - half_width), min(1.0, center + half_width))
+    lo = max(0.0, min(p, center - half_width))
+    hi = min(1.0, max(p, center + half_width))
+    return (p, lo, hi)
 
 
 def bootstrap_ci(

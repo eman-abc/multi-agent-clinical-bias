@@ -42,7 +42,10 @@ from shared.config_and_utils import (
     VALIDATOR_MODEL_ID,
     MAX_VALIDATION_REGENERATION_ATTEMPTS,
     BASELINE_TEMPERATURE,
+    REQUEST_TIMEOUT_SECONDS,
     _is_content_filter_error,
+    OPENROUTER_BASE_URL,
+    OPENROUTER_API_KEY,
 )
 from shared.conditions import (
     Attribute,
@@ -329,16 +332,28 @@ def _run_single_task_live(agent, description: str, expected_output: str, *, mode
         raise RuntimeError("The `openai` package is required for live generation. Install it with `pip install openai --break-system-packages`.") from exc
 
     effective_model = model or GENERATOR_MODEL_ID
-    client = OpenAI()
+    # Route Gemini models via OpenRouter with the proper provider hint.
+    base = None
+    key = None
+    extra_body = None
+    # Route Gemini models via OpenRouter with the proper provider hint.
+    if isinstance(effective_model, str):
+        if effective_model.startswith("google/gemini"):
+            base = OPENROUTER_BASE_URL
+            key = OPENROUTER_API_KEY
+            extra_body = {"provider": {"order": ["google-ai-studio"], "allow_fallbacks": False}}
+        # Route GPT-5.6 Luna via OpenRouter -> Azure upstream
+        elif effective_model.startswith("openai/gpt-5.6"):
+            base = OPENROUTER_BASE_URL
+            key = OPENROUTER_API_KEY
+            extra_body = {"provider": {"order": ["azure"], "allow_fallbacks": False}}
+    client = OpenAI(base_url=base, api_key=key, timeout=REQUEST_TIMEOUT_SECONDS)
     response = client.chat.completions.create(
         model=effective_model,
         messages=[{"role": "user", "content": description}],
-        # CHANGED from hardcoded 0.7: FairMedQA/AMQA sets temperature=0.0
-        # for their generation step too ("all the model temperatures are
-        # set to 0.0 for more stable responses"). Used for Agent A
-        # (Note-Writer) and the Note-Validator's checks alike, via this
-        # shared helper.
         temperature=BASELINE_TEMPERATURE,
+        extra_body=extra_body,
+        max_tokens=2000,
     )
     text = (response.choices[0].message.content or "").strip()
     if not text:
@@ -619,7 +634,16 @@ class _OpenAIParaphraseModel:
                 from openai import OpenAI  # type: ignore
             except ImportError as exc:
                 raise RuntimeError("The `openai` package is required for paraphrase generation.") from exc
-            self._client = OpenAI()
+            base = None
+            key = None
+            if isinstance(self._model_id, str):
+                if self._model_id.startswith("google/gemini"):
+                    base = OPENROUTER_BASE_URL
+                    key = OPENROUTER_API_KEY
+                elif self._model_id.startswith("openai/gpt-5.6"):
+                    base = OPENROUTER_BASE_URL
+                    key = OPENROUTER_API_KEY
+            self._client = OpenAI(base_url=base, api_key=key, timeout=REQUEST_TIMEOUT_SECONDS)
         return self._client
 
     def generate(self, prompts: list[str], per_prompt_seeds: list[int] | None = None) -> list[str]:
@@ -627,9 +651,15 @@ class _OpenAIParaphraseModel:
         outputs: list[str] = []
         for i, prompt in enumerate(prompts):
             seed = per_prompt_seeds[i] if per_prompt_seeds else None
+            extra_body = None
+            if isinstance(self._model_id, str):
+                if self._model_id.startswith("google/gemini"):
+                    extra_body = {"provider": {"order": ["google-ai-studio"], "allow_fallbacks": False}}
+                elif self._model_id.startswith("openai/gpt-5.6"):
+                    extra_body = {"provider": {"order": ["azure"], "allow_fallbacks": False}}
             response = client.chat.completions.create(
                 model=self._model_id, messages=[{"role": "user", "content": prompt}],
-                temperature=self._temperature, max_completion_tokens=self._max_tokens, seed=seed,
+                temperature=self._temperature, max_completion_tokens=self._max_tokens, seed=seed, extra_body=extra_body,
             )
             outputs.append(response.choices[0].message.content or "")
         return outputs

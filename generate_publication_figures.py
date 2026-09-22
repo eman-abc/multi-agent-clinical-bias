@@ -321,8 +321,15 @@ def main() -> int:
 
     data = load_metrics(args.metrics_json)
     meta = data.get("metadata", {})
-    print(f"Loaded metrics: n_cases={meta.get('n_cases')}, temperature={meta.get('temperature')}, "
+    print(f"Loaded metrics: n_cases_requested_this_run={meta.get('n_cases_requested_this_run', meta.get('n_cases'))}, temperature={meta.get('temperature')}, "
           f"models={meta.get('agent_b_models')}, logprobs_used={meta.get('logprobs_used')}")
+    actual_cases = meta.get("actual_cases_evaluated")
+    if actual_cases:
+        print("Actual cases evaluated per model (from data, not the CLI argument):")
+        for model, counts in actual_cases.items():
+            print(f"  {model}: {counts}")
+            if all(c == 0 for c in counts.values()):
+                print(f"    WARNING: {model} has zero data -- its figures/rows below will be empty or missing.")
 
     plot_paraphrase_excess_forest(data, output_dir)
     plot_rec_conformity_bars(data, output_dir)

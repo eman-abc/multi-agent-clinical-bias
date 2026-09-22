@@ -28,6 +28,7 @@ Usage:
 """
 
 import json
+import re
 import argparse
 from pathlib import Path
 from collections import defaultdict
@@ -49,6 +50,29 @@ def load_records(path: Path) -> list[dict]:
         raise FileNotFoundError(f"No data at {path} -- run run_full_conditional_sycophancy.py first.")
     with open(path) as f:
         return [json.loads(line) for line in f if line.strip()]
+
+
+def detect_model(records: list[dict]) -> str:
+    """
+    run_full_conditional_sycophancy.py now writes one file per model by
+    default (experiment_conditional_sycophancy_full_<model>.jsonl), so a
+    given input file should contain exactly one model. Detect it here
+    (rather than assume) so metrics/figures can be labeled correctly, and
+    warn loudly if that assumption is ever violated -- e.g. an older,
+    pre-multi-model file manually concatenated with a newer one would
+    silently pool two models' data together otherwise, exactly the kind
+    of silent-collision bug this project has hit and fixed before
+    (temperature, then measurement method, now model).
+    """
+    models = {r.get("model") for r in records if r.get("model")}
+    if len(models) > 1:
+        print(
+            f"WARNING: this file contains {len(models)} different models ({sorted(models)}) -- "
+            "every metric below will silently pool across them. If that's not intended, split "
+            "the file by model first (each model is written to its own file by default)."
+        )
+        return "multiple_models"
+    return next(iter(models), "unknown_model")
 
 
 # ---------------------------------------------------------------------------
@@ -579,12 +603,16 @@ def plot_binary_yield_by_signal(binary: dict, output_dir: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=str, default=str(DEFAULT_INPUT))
-    parser.add_argument("--metrics-output", type=str, default=str(DEFAULT_METRICS_OUTPUT))
-    parser.add_argument("--output-dir", type=str, default="figures")
+    parser.add_argument("--metrics-output", type=str, default=None, help="Default: phase0_results/conditional_sycophancy_metrics_<model>.json")
+    parser.add_argument("--output-dir", type=str, default=None, help="Default: figures/<model>/ -- kept per-model so different models' figures never overwrite each other")
     args = parser.parse_args()
 
     records = load_records(Path(args.input))
     print(f"Loaded {len(records)} records from {args.input}")
+
+    model = detect_model(records)
+    safe_model = re.sub(r"[^a-zA-Z0-9_.-]", "_", model)
+    print(f"Model: {model}")
 
     baselines, baseline_probs = build_baselines(records)
     binary, per_case_yield = compute_binary_yield(records, baselines)
@@ -598,6 +626,7 @@ def main() -> int:
     export = {
         "metadata": {
             "input_file": str(args.input),
+            "model": model,
             "n_records": len(records),
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         },
@@ -606,13 +635,13 @@ def main() -> int:
         "continuous_metrics": continuous,
         "signal_type_pooled": signal_pooled,
     }
-    metrics_path = Path(args.metrics_output)
+    metrics_path = Path(args.metrics_output) if args.metrics_output else Path(f"phase0_results/conditional_sycophancy_metrics_{safe_model}.json")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     with open(metrics_path, "w") as f:
         json.dump(export, f, indent=2)
     print(f"All computed metrics saved to: {metrics_path}")
 
-    output_dir = Path(args.output_dir)
+    output_dir = Path(args.output_dir) if args.output_dir else Path("figures") / safe_model
     output_dir.mkdir(parents=True, exist_ok=True)
     by_attr_raw = collect_signal_type_by_attribute_raw(records, baseline_probs)
     pooled_raw = collect_signal_type_pooled_raw(records, baseline_probs)

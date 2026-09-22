@@ -21,6 +21,7 @@ from shared.config_and_utils import (
     HF_TOKEN,
     LOCAL_API_KEY,
     LOCAL_BASE_URL,
+    REQUEST_TIMEOUT_SECONDS,
     AgentBModel,
 )
 
@@ -117,6 +118,7 @@ def _get_client(base_url: str | None, api_key: str | None):
     return OpenAI(
         base_url=base_url or LOCAL_BASE_URL,
         api_key=api_key or LOCAL_API_KEY or HF_TOKEN or "not-needed",
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
 
 
@@ -265,13 +267,14 @@ def run_usmle_diagnostic(validated_note, usmle_question, options, *, model, temp
     return _run_completion_live(prompt, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, top_logprobs=top_logprobs, max_retries=max_retries)
 
 
-def _run_chat_completion_messages_live(messages, classes, *, model, temperature, base_url, api_key, max_tokens, max_retries) -> tuple[ClassProbabilityResult, str]:
+def _run_chat_completion_messages_live(messages, classes, *, model, temperature, base_url, api_key, max_tokens, max_retries, extra_body=None) -> tuple[ClassProbabilityResult, str]:
     client = _get_client(base_url, api_key)
     response = None
     for attempt in range(max_retries + 1):
         try:
             response = _call_with_max_completion_tokens_compat(
                 client.chat.completions.create, model=model, messages=messages, max_tokens=max_tokens, temperature=temperature,
+                extra_body=extra_body,
             )
             break
         except Exception as exc:  # noqa: BLE001
@@ -281,15 +284,54 @@ def _run_chat_completion_messages_live(messages, classes, *, model, temperature,
             logger.warning("[inference_engine] Chat-completions request failed (attempt %d/%d): %s. Retrying in %ds.", attempt + 1, max_retries + 1, exc, wait)
             time.sleep(wait)
 
-    raw_text = (response.choices[0].message.content or "") if response.choices else ""
+    # Extract assistant text robustly: some upstreams (e.g. Gemini via
+    # OpenRouter) put the human-readable answer in `message.reasoning`
+    # or other non-standard fields instead of `message.content`.
+    def _extract_message_text(message) -> str:
+        # message may be an object with attributes or a plain dict
+        try:
+            # object-like attribute access
+            content = getattr(message, "content", None)
+            if content:
+                return content
+        except Exception:
+            content = None
+        # dict-like access
+        try:
+            if isinstance(message, dict):
+                c = message.get("content")
+                if c:
+                    return c
+        except Exception:
+            pass
+
+        # Try a `reasoning` field (dict or object) often present for Gemini
+        try:
+            reasoning = getattr(message, "reasoning", None)
+            if not reasoning and isinstance(message, dict):
+                reasoning = message.get("reasoning")
+            if reasoning:
+                if isinstance(reasoning, dict):
+                    return reasoning.get("text") or reasoning.get("content") or ""
+                return getattr(reasoning, "text", None) or getattr(reasoning, "content", None) or ""
+        except Exception:
+            pass
+
+        # Fallback: stringify whatever is available
+        try:
+            return str(message) or ""
+        except Exception:
+            return ""
+
+    raw_text = _extract_message_text(response.choices[0].message) if response and response.choices else ""
     class_probs = _one_hot_fallback(raw_text, classes)
     top_class = max(class_probs, key=class_probs.get) if class_probs else ""
     result = ClassProbabilityResult(top_class=top_class, class_probabilities=class_probs or {}, raw_text=raw_text, logprobs_available=False, model=model, temperature=temperature)
     return result, raw_text
 
 
-def _run_chat_completion_live(prompt, classes, *, model, temperature, base_url, api_key, max_tokens, max_retries) -> ClassProbabilityResult:
-    result, _raw = _run_chat_completion_messages_live([{"role": "user", "content": prompt}], classes, model=model, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries)
+def _run_chat_completion_live(prompt, classes, *, model, temperature, base_url, api_key, max_tokens, max_retries, extra_body=None) -> ClassProbabilityResult:
+    result, _raw = _run_chat_completion_messages_live([{"role": "user", "content": prompt}], classes, model=model, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries, extra_body=extra_body)
     return result
 
 
@@ -365,6 +407,7 @@ def _run_chat_completion_messages_logprobs_live(
     max_tokens: int,
     top_logprobs: int,
     max_retries: int,
+    extra_body: dict | None = None,
 ) -> tuple[ClassProbabilityResult, str]:
     """
     Messages-based logprobs helper -- needed so the combined-context
@@ -374,6 +417,12 @@ def _run_chat_completion_messages_logprobs_live(
     logprobs requested and extracted via _extract_class_logprobs_chat.
     Returns (result, raw_assistant_text) so a caller building a multi-turn
     exchange can append the raw text back into the next call's messages.
+
+    `extra_body`: passed straight through to the OpenAI SDK's own
+    `extra_body` kwarg -- its documented mechanism for non-OpenAI-standard
+    fields on an OpenAI-compatible endpoint (e.g. OpenRouter's routing
+    hint, {"provider": {"order": [...], "allow_fallbacks": False}}). None
+    for a plain Azure/OpenAI deployment, which needs no such field.
     """
     client = _get_client(base_url, api_key)
     response = None
@@ -387,6 +436,7 @@ def _run_chat_completion_messages_logprobs_live(
                 temperature=temperature,
                 logprobs=True,
                 top_logprobs=top_logprobs,
+                extra_body=extra_body,
             )
             break
         except Exception as exc:  # noqa: BLE001
@@ -402,7 +452,37 @@ def _run_chat_completion_messages_logprobs_live(
             )
             time.sleep(wait)
 
-    raw_text = (response.choices[0].message.content or "") if response.choices else ""
+    # Same robust extraction for logprobs path
+    def _extract_message_text(message) -> str:
+        try:
+            content = getattr(message, "content", None)
+            if content:
+                return content
+        except Exception:
+            pass
+        try:
+            if isinstance(message, dict):
+                c = message.get("content")
+                if c:
+                    return c
+        except Exception:
+            pass
+        try:
+            reasoning = getattr(message, "reasoning", None)
+            if not reasoning and isinstance(message, dict):
+                reasoning = message.get("reasoning")
+            if reasoning:
+                if isinstance(reasoning, dict):
+                    return reasoning.get("text") or reasoning.get("content") or ""
+                return getattr(reasoning, "text", None) or getattr(reasoning, "content", None) or ""
+        except Exception:
+            pass
+        try:
+            return str(message) or ""
+        except Exception:
+            return ""
+
+    raw_text = _extract_message_text(response.choices[0].message) if response and response.choices else ""
     class_probs = _extract_class_logprobs_chat(response, classes)
     logprobs_available = class_probs is not None
     if class_probs is None:
@@ -435,18 +515,20 @@ def _run_chat_completion_logprobs_live(
     max_tokens: int,
     top_logprobs: int,
     max_retries: int,
+    extra_body: dict | None = None,
 ) -> ClassProbabilityResult:
     """Like _run_chat_completion_live, but requests and extracts real logprobs instead of one-hot text parsing."""
     result, _raw = _run_chat_completion_messages_logprobs_live(
         [{"role": "user", "content": prompt}], classes, model=model, temperature=temperature,
         base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+        extra_body=extra_body,
     )
     return result
 
 
 def run_esi_triage_chat_completions_logprobs(
     validated_note, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None,
-    max_tokens=150, top_logprobs=5, max_retries=3,
+    max_tokens=800, top_logprobs=5, max_retries=3, extra_body=None,
 ) -> ClassProbabilityResult:
     """
     Real-logprobs variant of run_esi_triage_chat_completions. Requests
@@ -488,12 +570,13 @@ def run_esi_triage_chat_completions_logprobs(
     return _run_chat_completion_logprobs_live(
         prompt, ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url,
         api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+        extra_body=extra_body,
     )
 
 
 def run_usmle_diagnostic_chat_completions_logprobs(
     validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None,
-    api_key=None, max_tokens=150, top_logprobs=5, max_retries=3,
+    api_key=None, max_tokens=800, top_logprobs=5, max_retries=3, extra_body=None,
 ) -> ClassProbabilityResult:
     """Real-logprobs variant of run_usmle_diagnostic_chat_completions. See run_esi_triage_chat_completions_logprobs."""
     model_id = _model_id(model)
@@ -505,19 +588,20 @@ def run_usmle_diagnostic_chat_completions_logprobs(
     return _run_chat_completion_logprobs_live(
         prompt, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url,
         api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+        extra_body=extra_body,
     )
 
 
-def run_esi_triage_chat_completions(validated_note, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=20, max_retries=3) -> ClassProbabilityResult:
+def run_esi_triage_chat_completions(validated_note, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=800, max_retries=3, extra_body=None) -> ClassProbabilityResult:
     model_id = _model_id(model)
     prompt = ESI_TRIAGE_PROMPT_TEMPLATE.format(validated_note=validated_note)
-    return _run_chat_completion_live(prompt, ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries)
+    return _run_chat_completion_live(prompt, ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries, extra_body=extra_body)
 
 
-def run_usmle_diagnostic_chat_completions(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=20, max_retries=3) -> ClassProbabilityResult:
+def run_usmle_diagnostic_chat_completions(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=800, max_retries=3, extra_body=None) -> ClassProbabilityResult:
     model_id = _model_id(model)
     prompt = USMLE_DIAGNOSTIC_PROMPT_TEMPLATE.format(validated_note=validated_note, usmle_question=usmle_question, option_a=options.get("A", ""), option_b=options.get("B", ""), option_c=options.get("C", ""), option_d=options.get("D", ""))
-    return _run_chat_completion_live(prompt, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries)
+    return _run_chat_completion_live(prompt, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries, extra_body=extra_body)
 
 
 @dataclass(frozen=True)
@@ -527,7 +611,7 @@ class CombinedTaskResult:
     order: str
 
 
-def run_esi_then_usmle_combined_chat_completions(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=20, max_retries=3) -> CombinedTaskResult:
+def run_esi_then_usmle_combined_chat_completions(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None, api_key=None, max_tokens=800, max_retries=3, extra_body=None) -> CombinedTaskResult:
     """
     Combined-context variant: Agent B answers ESI first, then answers USMLE
     in the SAME conversation. Grounded in Stanwyck et al. (2026, medRxiv).
@@ -537,21 +621,21 @@ def run_esi_then_usmle_combined_chat_completions(validated_note, usmle_question,
     esi_prompt = ESI_TRIAGE_PROMPT_TEMPLATE.format(validated_note=validated_note)
     usmle_prompt = USMLE_DIAGNOSTIC_PROMPT_TEMPLATE.format(validated_note=validated_note, usmle_question=usmle_question, option_a=options.get("A", ""), option_b=options.get("B", ""), option_c=options.get("C", ""), option_d=options.get("D", ""))
 
-    esi_result, esi_raw = _run_chat_completion_messages_live([{"role": "user", "content": esi_prompt}], ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries)
+    esi_result, esi_raw = _run_chat_completion_messages_live([{"role": "user", "content": esi_prompt}], ESI_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries, extra_body=extra_body)
 
     messages_with_history = [
         {"role": "user", "content": esi_prompt},
         {"role": "assistant", "content": esi_raw},
         {"role": "user", "content": usmle_prompt},
     ]
-    usmle_result, _usmle_raw = _run_chat_completion_messages_live(messages_with_history, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries)
+    usmle_result, _usmle_raw = _run_chat_completion_messages_live(messages_with_history, USMLE_CLASSES, model=model_id, temperature=temperature, base_url=base_url, api_key=api_key, max_tokens=max_tokens, max_retries=max_retries, extra_body=extra_body)
 
     return CombinedTaskResult(esi_result=esi_result, usmle_result=usmle_result, order="esi_first")
 
 
 def run_esi_then_usmle_combined_chat_completions_logprobs(
     validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, base_url=None,
-    api_key=None, max_tokens=150, top_logprobs=5, max_retries=3,
+    api_key=None, max_tokens=800, top_logprobs=5, max_retries=3, extra_body=None,
 ) -> CombinedTaskResult:
     """Real-logprobs variant of run_esi_then_usmle_combined_chat_completions. Same conversation-history mechanism, both turns requesting logprobs."""
     model_id = _model_id(model)
@@ -565,6 +649,7 @@ def run_esi_then_usmle_combined_chat_completions_logprobs(
     esi_result, esi_raw = _run_chat_completion_messages_logprobs_live(
         [{"role": "user", "content": esi_prompt}], ESI_CLASSES, model=model_id, temperature=temperature,
         base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+        extra_body=extra_body,
     )
 
     messages_with_history = [
@@ -575,12 +660,13 @@ def run_esi_then_usmle_combined_chat_completions_logprobs(
     usmle_result, _usmle_raw = _run_chat_completion_messages_logprobs_live(
         messages_with_history, USMLE_CLASSES, model=model_id, temperature=temperature,
         base_url=base_url, api_key=api_key, max_tokens=max_tokens, top_logprobs=top_logprobs, max_retries=max_retries,
+        extra_body=extra_body,
     )
 
     return CombinedTaskResult(esi_result=esi_result, usmle_result=usmle_result, order="esi_first")
 
 
-def run_esi_triage_cot(validated_note, *, model, temperature=BASELINE_TEMPERATURE, dry_run=None, base_url=None, api_key=None, max_tokens=512, max_retries=3) -> FreeGenerationResult:
+def run_esi_triage_cot(validated_note, *, model, temperature=BASELINE_TEMPERATURE, dry_run=None, base_url=None, api_key=None, max_tokens=800, max_retries=3) -> FreeGenerationResult:
     model_id = _model_id(model)
     effective_dry_run = DRY_RUN if dry_run is None else dry_run
     if effective_dry_run:
@@ -590,7 +676,7 @@ def run_esi_triage_cot(validated_note, *, model, temperature=BASELINE_TEMPERATUR
     return FreeGenerationResult(text=text, model=model_id, temperature=temperature, dry_run=False)
 
 
-def run_usmle_diagnostic_cot(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, dry_run=None, base_url=None, api_key=None, max_tokens=512, max_retries=3) -> FreeGenerationResult:
+def run_usmle_diagnostic_cot(validated_note, usmle_question, options, *, model, temperature=BASELINE_TEMPERATURE, dry_run=None, base_url=None, api_key=None, max_tokens=800, max_retries=3) -> FreeGenerationResult:
     model_id = _model_id(model)
     effective_dry_run = DRY_RUN if dry_run is None else dry_run
     if effective_dry_run:

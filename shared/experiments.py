@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -44,6 +45,8 @@ from typing import Callable
 
 from shared.config_and_utils import (
     AGENT_B_MODELS,
+    AGENT_B_API_MODELS,
+    APIModelSpec,
     AgentBModel,
     BASELINE_TEMPERATURE,
     DRY_RUN,
@@ -61,14 +64,39 @@ logger = logging.getLogger(__name__)
 TASKS: tuple[str, ...] = ("esi", "usmle")
 
 
-def _model_display_name(model: AgentBModel | str) -> str:
+def _model_display_name(model: AgentBModel | APIModelSpec | str) -> str:
     """
     AgentBModel.display_name for the real open-weight models (the logprobs
-    path), or the raw string itself for a Chat-Completions deployment name
-    (e.g. "gpt-5.4-mini") -- lets every function below accept either kind
-    of "model" without needing two parallel code paths for this one field.
+    path), APIModelSpec.display_name for an API-routed model (Azure or
+    OpenRouter), or the raw string itself for a bare Chat-Completions
+    deployment name -- lets every function below accept any of these three
+    "model" shapes without needing parallel code paths for this one field.
     """
-    return model.display_name if isinstance(model, AgentBModel) else model
+    if isinstance(model, (AgentBModel, APIModelSpec)):
+        return model.display_name
+    return model
+
+
+def _resolve_model_connection(model: AgentBModel | APIModelSpec | str) -> tuple[str, str | None, str | None, dict | None]:
+    """
+    Returns (api_model_id, base_url, api_key, extra_body) for whichever
+    "model" shape is passed. This is what lets a single experiment loop
+    over models from DIFFERENT providers (Azure directly, OpenRouter) in
+    one run without one model's connection silently overriding another's --
+    each APIModelSpec carries its own base_url/api_key/extra_body, resolved
+    fresh for every call rather than relying on a single global default.
+
+    A bare string (this project's original single-model convention, e.g.
+    "gpt-5.4-mini") resolves to (model, None, None, None) -- the inference
+    functions already fall back to the global OPENAI_API_KEY/OPENAI_BASE_URL
+    when base_url/api_key are None, so this is exactly the pre-existing
+    behavior, unchanged.
+    """
+    if isinstance(model, APIModelSpec):
+        return model.api_model_id, model.base_url, model.api_key, model.extra_body
+    if isinstance(model, AgentBModel):
+        return model.hf_identifier, None, None, None
+    return model, None, None, None
 
 
 def _require_live_for_chat_completions(dry_run: bool | None) -> None:
@@ -473,7 +501,9 @@ def _process_one_case_for_sweep(
                             case, spec, neutral_note=neutral_cache.get(case.question_id), dry_run=dry_run
                         )
                     else:
+                        logger.debug("[experiments] Starting generate_note: case_id=%s, attribute=%s, spec=%s", case.question_id, attribute.value, spec)
                         validated = pipe.generate_note(case, spec, dry_run=dry_run)
+                        logger.debug("[experiments] Finished generate_note: case_id=%s, blocked=%s", case.question_id, validated.blocked_reason)
                 except (pipe.UnimplementedConditionError, NotImplementedError) as exc:
                     blocked_key = (
                         f"{attribute.value}:{spec.condition_label.value}:"
@@ -532,17 +562,23 @@ def _process_one_case_for_sweep(
                     if checkpoint.has(record):
                         continue
                     if use_chat_completions:
+                        model_id, base_url, api_key, extra_body = _resolve_model_connection(model)
+                        logger.debug("[experiments] Calling Agent B: case_id=%s, model=%s, task=%s", case.question_id, _model_display_name(model), task)
                         if task == "esi":
                             esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
                             result = _call_chat_completions_safe(
-                                esi_fn, validated.note_text, model=model, temperature=temperature,
+                                esi_fn, validated.note_text, model=model_id, temperature=temperature,
+                                base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
+                            logger.debug("[experiments] Agent B returned: case_id=%s, model=%s, task=%s, result=%s", case.question_id, _model_display_name(model), task, getattr(result, 'top_class', None) if result is not None else 'BLOCKED')
                         else:
                             usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
                             result = _call_chat_completions_safe(
                                 usmle_fn, validated.note_text, case.neutralised_question, case.options,
-                                model=model, temperature=temperature,
+                                model=model_id, temperature=temperature,
+                                base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
+                        logger.debug("[experiments] Agent B returned: case_id=%s, model=%s, task=%s, result=%s", case.question_id, _model_display_name(model), task, getattr(result, 'top_class', None) if result is not None else 'BLOCKED')
                         local_counts["agent_b"] += 1
                         if result is None:
                             local_counts["content_filter_blocks"] += 1
@@ -567,6 +603,18 @@ def _process_one_case_for_sweep(
     return records_to_append, local_counts
 
 
+def _format_duration(seconds: float) -> str:
+    """Human-readable duration for progress reporting (e.g. '45s', '2m 15s', '1h 5m')."""
+    seconds = int(seconds)
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes, secs = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m {secs}s"
+    hours, mins = divmod(minutes, 60)
+    return f"{hours}h {mins}m"
+
+
 def _run_signal_and_attribute_sweep(
     *,
     experiment_name: str,
@@ -579,7 +627,7 @@ def _run_signal_and_attribute_sweep(
     models: list[AgentBModel] | None = None,
     use_chat_completions: bool = False,
     use_logprobs: bool = True,
-    chat_completions_model: str = "gpt-5.4-mini",
+    chat_completions_models: list[APIModelSpec | str] | None = None,
     max_workers: int = 5,
 ) -> ExperimentRunResult:
     """
@@ -597,13 +645,21 @@ def _run_signal_and_attribute_sweep(
     forced single-token result). False uses the older one-hot text-parsing
     functions (run_esi_triage_chat_completions /
     run_usmle_diagnostic_chat_completions) -- kept available for direct
-    comparison, not because logprobs are unavailable.
+    comparison, and currently the ONLY option for the OpenRouter-routed
+    models (DeepSeek-V4-Flash, GPT-5.6-Luna, Gemini-3.8-Flash), whose
+    logprobs support has not been confirmed reliable through OpenRouter
+    (see test_openrouter_logprobs.py and AGENT_B_API_MODELS's own comment).
 
-    `models` is ignored when use_chat_completions is True; the single
-    `chat_completions_model` string is used instead of the AGENT_B_MODELS
-    list. Every downstream metrics function in shared/metrics.py reads
-    `model` as an opaque string key and needs no changes to consume any
-    of these variants.
+    `chat_completions_models`: a LIST of models (APIModelSpec for Azure/
+    OpenRouter, or a bare string) -- defaults to [gpt-5.4-mini] if not
+    given, matching this project's original single-model behavior. `models`
+    (the AgentBModel-based open-weight roster) is ignored when
+    use_chat_completions is True. Every downstream metrics function in
+    shared/metrics.py reads `model` as an opaque string key and needs no
+    changes to consume any of these variants -- multi-model results are
+    told apart purely by that string, resolved from
+    APIModelSpec.display_name/AgentBModel.display_name/the bare string
+    itself via _model_display_name.
 
     `max_workers`: cases are processed concurrently via a thread pool
     (each case is fully independent of every other -- the natural unit of
@@ -625,10 +681,18 @@ def _run_signal_and_attribute_sweep(
     checkpoint = JSONLCheckpoint(checkpoint_path)
     blocked_counts: dict[str, int] = {}
     content_filter_blocks = 0
-    models = [chat_completions_model] if use_chat_completions else (models or list(AGENT_B_MODELS))
+    models = (chat_completions_models or [AGENT_B_API_MODELS[0]]) if use_chat_completions else (models or list(AGENT_B_MODELS))
 
     amqa_records = load_amqa_dataset(dry_run=dry_run, mock_n=max(n_cases, 1))
     cases = sample_cases(amqa_records, n_cases, seed=42)
+
+    print(
+        f"[{experiment_name}] Processing {len(cases)} cases across {len(models)} model(s) "
+        f"with {max_workers} concurrent worker(s)... (each case runs every attribute/condition/task "
+        f"for every model, so one case = many individual API calls, not one)"
+    )
+    start_time = time.time()
+    completed = 0
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -663,6 +727,19 @@ def _run_signal_and_attribute_sweep(
             for key, count in local_counts["blocked_counts"].items():
                 blocked_counts[key] = blocked_counts.get(key, 0) + count
 
+            completed += 1
+            elapsed = time.time() - start_time
+            avg_per_case = elapsed / completed
+            remaining = avg_per_case * (len(cases) - completed)
+            case_id = futures[future].question_id
+            print(
+                f"[{experiment_name}] Case {completed}/{len(cases)} done ({completed / len(cases):.0%})"
+                f"  case_id={case_id}"
+                f"  elapsed={_format_duration(elapsed)}"
+                f"  avg={avg_per_case:.1f}s/case"
+                f"  ETA={_format_duration(remaining)}"
+            )
+
     compare_to_budget(experiment_name, tracker)
     return ExperimentRunResult(
         experiment_name=experiment_name,
@@ -682,7 +759,7 @@ def run_experiment_1(
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
     use_logprobs: bool = True,
-    chat_completions_model: str = "gpt-5.4-mini",
+    chat_completions_models: list[APIModelSpec | str] | None = None,
     max_workers: int = 5,
 ) -> ExperimentRunResult:
     """Experiment 1 (§11) — signal-type gradient: EXP/PRX/IMP x polarity + N + P, all 3 attributes (SES first), both tasks."""
@@ -697,7 +774,7 @@ def run_experiment_1(
         use_chat_completions=use_chat_completions,
         use_logprobs=use_logprobs,
         max_workers=max_workers,
-        chat_completions_model=chat_completions_model,
+        chat_completions_models=chat_completions_models,
     )
 
 
@@ -709,7 +786,7 @@ def run_experiment_2(
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
     use_logprobs: bool = True,
-    chat_completions_model: str = "gpt-5.4-mini",
+    chat_completions_models: list[APIModelSpec | str] | None = None,
     max_workers: int = 5,
 ) -> ExperimentRunResult:
     """Experiment 2 (§11) — cross-attribute replication: E+/E-/N/P using PRX carrier only, all 3 attributes, both tasks."""
@@ -724,7 +801,7 @@ def run_experiment_2(
         max_workers=max_workers,
         temperature=temperature,
         use_chat_completions=use_chat_completions,
-        chat_completions_model=chat_completions_model,
+        chat_completions_models=chat_completions_models,
     )
 
 
@@ -741,7 +818,7 @@ def run_experiment_3(
     temperature: float = BASELINE_TEMPERATURE,
     use_chat_completions: bool = False,
     use_logprobs: bool = True,
-    chat_completions_model: str = "gpt-5.4-mini",
+    chat_completions_models: list[APIModelSpec | str] | None = None,
 ) -> ExperimentRunResult:
     """
     Experiment 3 (§11) — carrier causality / redaction check. E+ (PRX, SES),
@@ -751,12 +828,15 @@ def run_experiment_3(
     tracker = APICallTracker()
     checkpoint = JSONLCheckpoint(checkpoint_path)
     content_filter_blocks = 0
-    models = [chat_completions_model] if use_chat_completions else list(AGENT_B_MODELS)
+    models = (chat_completions_models or [AGENT_B_API_MODELS[0]]) if use_chat_completions else list(AGENT_B_MODELS)
 
     amqa_records = load_amqa_dataset(dry_run=dry_run, mock_n=max(n_cases, 1))
     cases = sample_cases(amqa_records, n_cases, seed=42)
 
-    for case in cases:
+    print(f"[experiment_3] Processing {len(cases)} cases across {len(models)} model(s), sequentially...")
+    start_time = time.time()
+
+    for case_index, case in enumerate(cases, start=1):
         matrix = cond.build_redaction_conditions(case.question_id)
         for spec in matrix:
             if not _generation_needed(
@@ -804,11 +884,13 @@ def run_experiment_3(
                     if checkpoint.has(record):
                         continue
                     if use_chat_completions:
+                        model_id, base_url, api_key, extra_body = _resolve_model_connection(model)
                         if task == "esi":
                             esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
                             result = _call_chat_completions_safe(
                                 esi_fn,
-                                validated.note_text, model=model, temperature=temperature,
+                                validated.note_text, model=model_id, temperature=temperature,
+                                base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
                         else:
                             usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
@@ -817,8 +899,9 @@ def run_experiment_3(
                                 validated.note_text,
                                 case.neutralised_question,
                                 case.options,
-                                model=model,
+                                model=model_id,
                                 temperature=temperature,
+                                base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
                         tracker.record_inference()
                         if result is None:
@@ -844,6 +927,17 @@ def run_experiment_3(
                     record.top_class = result.top_class
                     record.class_probabilities = result.class_probabilities
                     checkpoint.append(record)
+
+        elapsed = time.time() - start_time
+        avg_per_case = elapsed / case_index
+        remaining = avg_per_case * (len(cases) - case_index)
+        print(
+            f"[experiment_3] Case {case_index}/{len(cases)} done ({case_index / len(cases):.0%})"
+            f"  case_id={case.question_id}"
+            f"  elapsed={_format_duration(elapsed)}"
+            f"  avg={avg_per_case:.1f}s/case"
+            f"  ETA={_format_duration(remaining)}"
+        )
 
     compare_to_budget("experiment_3", tracker)
     return ExperimentRunResult(
@@ -883,7 +977,7 @@ def run_experiment_rec(
     dry_run: bool | None = None,
     temperature: float = BASELINE_TEMPERATURE,
     use_logprobs: bool = True,
-    chat_completions_model: str = "gpt-5.4-mini",
+    chat_completions_models: list[APIModelSpec | str] | None = None,
     run_combined_context_on_rec_wrong: bool = True,
 ) -> ExperimentRunResult:
     """
@@ -892,6 +986,13 @@ def run_experiment_rec(
     resumable equivalent of what run_live_smoke_test.py has been doing ad
     hoc. `case.correct_answer_idx` and `case.options` (already loaded by
     Module 2) anchor REC_correct/REC_wrong's ground truth.
+
+    `chat_completions_models`: a LIST of models (APIModelSpec for Azure/
+    OpenRouter, or a bare string) -- defaults to [gpt-5.4-mini] if not
+    given. Agent A's note is generated ONCE per (case, condition)
+    regardless of how many models are tested; only the Agent B measurement
+    step loops per model, since the note itself doesn't depend on which
+    model will read it -- avoids redundant, wasteful note regeneration.
 
     `run_combined_context_on_rec_wrong`: also runs the combined-context
     Agent B variant (shared/inference_engine.py's
@@ -903,13 +1004,16 @@ def run_experiment_rec(
     """
     tracker = APICallTracker()
     checkpoint = JSONLCheckpoint(checkpoint_path)
-    model = chat_completions_model
+    models = chat_completions_models or [AGENT_B_API_MODELS[0]]
     content_filter_blocks = 0
 
     amqa_records = load_amqa_dataset(dry_run=dry_run, mock_n=max(n_cases, 1))
     cases = sample_cases(amqa_records, n_cases, seed=42)
 
-    for case in cases:
+    print(f"[experiment_rec] Processing {len(cases)} cases across {len(models)} model(s), sequentially...")
+    start_time = time.time()
+
+    for case_index, case in enumerate(cases, start=1):
         matrix = cond.build_recommendation_conditions(case.question_id, case.correct_answer_idx, case.options)
 
         for spec in matrix:
@@ -919,7 +1023,7 @@ def run_experiment_rec(
                 case_id=case.question_id,
                 attribute=None,
                 spec=spec,
-                models=[model],
+                models=models,
                 tasks=TASKS,
                 temperature=temperature,
                 logprobs_available=use_logprobs,
@@ -950,94 +1054,111 @@ def run_experiment_rec(
                 )
                 continue
 
-            esi_top_class: str | None = None
-            usmle_top_class: str | None = None
+            for model in models:
+                model_id, base_url, api_key, extra_body = _resolve_model_connection(model)
+                model_display = _model_display_name(model)
+                esi_top_class: str | None = None
+                usmle_top_class: str | None = None
 
-            for task in TASKS:
-                record = ObservationRecord(
-                    experiment="experiment_rec",
-                    case_id=case.question_id,
-                    attribute=None,
-                    condition_label=spec.condition_label.value,
-                    signal_type=spec.signal_type.value if spec.signal_type else None,
-                    model=model,
-                    task=task,
-                    temperature=temperature,
-                    top_class=None,
-                    class_probabilities=None,
-                    validation_passed=validated.validation_passed,
-                    blocked_reason=None,
-                    logprobs_available=use_logprobs,
-                )
-                if checkpoint.has(record):
-                    continue
-                if task == "esi":
-                    esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
-                    result = _call_chat_completions_safe(
-                        esi_fn,
-                        validated.note_text, model=model, temperature=temperature,
+                for task in TASKS:
+                    record = ObservationRecord(
+                        experiment="experiment_rec",
+                        case_id=case.question_id,
+                        attribute=None,
+                        condition_label=spec.condition_label.value,
+                        signal_type=spec.signal_type.value if spec.signal_type else None,
+                        model=model_display,
+                        task=task,
+                        temperature=temperature,
+                        top_class=None,
+                        class_probabilities=None,
+                        validation_passed=validated.validation_passed,
+                        blocked_reason=None,
+                        logprobs_available=use_logprobs,
                     )
-                    tracker.record_inference()
-                    if result is None:
-                        content_filter_blocks += 1
-                        record.blocked_reason = "content_filter_azure"
-                        checkpoint.append(record)
+                    if checkpoint.has(record):
                         continue
-                    esi_top_class = result.top_class
-                else:
-                    usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
-                    result = _call_chat_completions_safe(
-                        usmle_fn,
-                        validated.note_text, case.neutralised_question, case.options,
-                        model=model, temperature=temperature,
-                    )
-                    tracker.record_inference()
-                    if result is None:
-                        content_filter_blocks += 1
-                        record.blocked_reason = "content_filter_azure"
-                        checkpoint.append(record)
-                        continue
-                    usmle_top_class = result.top_class
-                record.top_class = result.top_class
-                record.class_probabilities = result.class_probabilities
-                checkpoint.append(record)
-
-            if run_combined_context_on_rec_wrong and spec.condition_label is cond.ConditionLabel.REC_WRONG:
-                combined_esi_record = ObservationRecord(
-                    experiment="experiment_rec", case_id=case.question_id, attribute=None,
-                    condition_label=spec.condition_label.value, signal_type=None, model=model,
-                    task="esi_combined", temperature=temperature, top_class=None,
-                    class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
-                    logprobs_available=use_logprobs,
-                )
-                combined_usmle_record = ObservationRecord(
-                    experiment="experiment_rec", case_id=case.question_id, attribute=None,
-                    condition_label=spec.condition_label.value, signal_type=None, model=model,
-                    task="usmle_combined", temperature=temperature, top_class=None,
-                    class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
-                    logprobs_available=use_logprobs,
-                )
-                if not (checkpoint.has(combined_esi_record) and checkpoint.has(combined_usmle_record)):
-                    combined_fn = inf.run_esi_then_usmle_combined_chat_completions_logprobs if use_logprobs else inf.run_esi_then_usmle_combined_chat_completions
-                    combined = _call_chat_completions_safe(
-                        combined_fn,
-                        validated.note_text, case.neutralised_question, case.options,
-                        model=model, temperature=temperature,
-                    )
-                    tracker.record_inference(2)
-                    if combined is None:
-                        content_filter_blocks += 2
-                        combined_esi_record.blocked_reason = "content_filter_azure"
-                        combined_usmle_record.blocked_reason = "content_filter_azure"
-                        checkpoint.append(combined_esi_record)
-                        checkpoint.append(combined_usmle_record)
+                    if task == "esi":
+                        esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
+                        result = _call_chat_completions_safe(
+                            esi_fn,
+                            validated.note_text, model=model_id, temperature=temperature,
+                            base_url=base_url, api_key=api_key, extra_body=extra_body,
+                        )
+                        tracker.record_inference()
+                        if result is None:
+                            content_filter_blocks += 1
+                            record.blocked_reason = "content_filter_azure"
+                            checkpoint.append(record)
+                            continue
+                        esi_top_class = result.top_class
                     else:
-                        combined_esi_record.top_class = combined.esi_result.top_class
-                        combined_esi_record.class_probabilities = combined.esi_result.class_probabilities
-                        combined_usmle_record.top_class = combined.usmle_result.top_class
-                        combined_usmle_record.class_probabilities = combined.usmle_result.class_probabilities
-                        checkpoint.append(combined_esi_record)
-                        checkpoint.append(combined_usmle_record)
+                        usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
+                        result = _call_chat_completions_safe(
+                            usmle_fn,
+                            validated.note_text, case.neutralised_question, case.options,
+                            model=model_id, temperature=temperature,
+                            base_url=base_url, api_key=api_key, extra_body=extra_body,
+                        )
+                        tracker.record_inference()
+                        if result is None:
+                            content_filter_blocks += 1
+                            record.blocked_reason = "content_filter_azure"
+                            checkpoint.append(record)
+                            continue
+                        usmle_top_class = result.top_class
+                    record.top_class = result.top_class
+                    record.class_probabilities = result.class_probabilities
+                    checkpoint.append(record)
+
+                if run_combined_context_on_rec_wrong and spec.condition_label is cond.ConditionLabel.REC_WRONG:
+                    combined_esi_record = ObservationRecord(
+                        experiment="experiment_rec", case_id=case.question_id, attribute=None,
+                        condition_label=spec.condition_label.value, signal_type=None, model=model_display,
+                        task="esi_combined", temperature=temperature, top_class=None,
+                        class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
+                        logprobs_available=use_logprobs,
+                    )
+                    combined_usmle_record = ObservationRecord(
+                        experiment="experiment_rec", case_id=case.question_id, attribute=None,
+                        condition_label=spec.condition_label.value, signal_type=None, model=model_display,
+                        task="usmle_combined", temperature=temperature, top_class=None,
+                        class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
+                        logprobs_available=use_logprobs,
+                    )
+                    if not (checkpoint.has(combined_esi_record) and checkpoint.has(combined_usmle_record)):
+                        combined_fn = inf.run_esi_then_usmle_combined_chat_completions_logprobs if use_logprobs else inf.run_esi_then_usmle_combined_chat_completions
+                        combined = _call_chat_completions_safe(
+                            combined_fn,
+                            validated.note_text, case.neutralised_question, case.options,
+                            model=model_id, temperature=temperature,
+                            base_url=base_url, api_key=api_key, extra_body=extra_body,
+                        )
+                        tracker.record_inference(2)
+                        if combined is None:
+                            content_filter_blocks += 2
+                            combined_esi_record.blocked_reason = "content_filter_azure"
+                            combined_usmle_record.blocked_reason = "content_filter_azure"
+                            checkpoint.append(combined_esi_record)
+                            checkpoint.append(combined_usmle_record)
+                        else:
+                            combined_esi_record.top_class = combined.esi_result.top_class
+                            combined_esi_record.class_probabilities = combined.esi_result.class_probabilities
+                            combined_usmle_record.top_class = combined.usmle_result.top_class
+                            combined_usmle_record.class_probabilities = combined.usmle_result.class_probabilities
+                            checkpoint.append(combined_esi_record)
+                            checkpoint.append(combined_usmle_record)
+
+        elapsed = time.time() - start_time
+        avg_per_case = elapsed / case_index
+        remaining = avg_per_case * (len(cases) - case_index)
+        print(
+            f"[experiment_rec] Case {case_index}/{len(cases)} done ({case_index / len(cases):.0%})"
+            f"  case_id={case.question_id}"
+            f"  elapsed={_format_duration(elapsed)}"
+            f"  avg={avg_per_case:.1f}s/case"
+            f"  ETA={_format_duration(remaining)}"
+        )
 
     return ExperimentRunResult(
         experiment_name="experiment_rec",

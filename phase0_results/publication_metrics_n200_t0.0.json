@@ -1,0 +1,1109 @@
+{
+  "metadata": {
+    "n_cases_requested_this_run": 200,
+    "actual_cases_evaluated": {
+      "DeepSeek-V4-Flash": {
+        "experiment_1": 200,
+        "experiment_2": 200,
+        "experiment_3": 200,
+        "experiment_rec": 200
+      },
+      "Gemini-3.8-Flash": {
+        "experiment_1": 200,
+        "experiment_2": 200,
+        "experiment_3": 200,
+        "experiment_rec": 200
+      }
+    },
+    "temperature": 0.0,
+    "generator_model": "openai/gpt-5.6-luna",
+    "validator_model": "openai/gpt-5.6-luna",
+    "agent_b_models": [
+      "DeepSeek-V4-Flash",
+      "Gemini-3.8-Flash"
+    ],
+    "logprobs_used": false,
+    "timestamp_utc": "2026-09-19T20:50:29.186139+00:00",
+    "skip_rec": false
+  },
+  "demographic_bias": {
+    "DeepSeek-V4-Flash": {
+      "ses": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.5757575757575758,
+              "n_cf": 114,
+              "n_total": 198
+            },
+            "ad": {
+              "ad": 0.045454545454545414,
+              "expected_privileged": 3.3484848484848486,
+              "expected_unprivileged": 3.303030303030303
+            },
+            "mcnemar": {
+              "statistic": 4.661290322580645,
+              "p_value": 0.030849999436874942,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.18301613617988455,
+              "p_a": 0.494949494949495,
+              "p_b": 0.40404040404040403,
+              "n": 198
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.864321608040201,
+              "n_cf": 172,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.04020100502512558,
+              "acc_privileged": 0.7939698492462312,
+              "acc_unprivileged": 0.8341708542713567
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.15158963203430176,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.10346777581353672,
+              "p_a": 0.7939698492462312,
+              "p_b": 0.8341708542713567,
+              "n": 199
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.605,
+              "n_cf": 121,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.010000000000000231,
+              "expected_privileged": 3.31,
+              "expected_unprivileged": 3.3
+            },
+            "mcnemar": {
+              "statistic": 1.0847457627118644,
+              "p_value": 0.29763831714664346,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.09144549079364883,
+              "p_a": 0.39,
+              "p_b": 0.435,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.88,
+              "n_cf": 176,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.81,
+              "acc_unprivileged": 0.805
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.01268211227744942,
+              "p_a": 0.81,
+              "p_b": 0.805,
+              "n": 200
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.5353535353535354,
+              "n_cf": 106,
+              "n_total": 198
+            },
+            "ad": {
+              "ad": 0.09090909090909083,
+              "expected_privileged": 3.2777777777777777,
+              "expected_unprivileged": 3.3686868686868685
+            },
+            "mcnemar": {
+              "statistic": 0.0547945205479452,
+              "p_value": 0.8149210911464686,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.030734195306125534,
+              "p_a": 0.42424242424242425,
+              "p_b": 0.4090909090909091,
+              "n": 198
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.855,
+              "n_cf": 171,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.014999999999999902,
+              "acc_privileged": 0.815,
+              "acc_unprivileged": 0.8
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.6776394844055176,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.03805210276983262,
+              "p_a": 0.815,
+              "p_b": 0.8,
+              "n": 200
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": -0.03535353535353535,
+              "ci_low": -0.19696969696969696,
+              "ci_high": 0.10606060606060606,
+              "n": 198
+            },
+            "usmle": {
+              "mean": 0.035175879396984924,
+              "ci_low": -0.01507537688442211,
+              "ci_high": 0.08542713567839195,
+              "n": 199
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": -0.08,
+              "ci_low": -0.23,
+              "ci_high": 0.07,
+              "n": 200
+            },
+            "usmle": {
+              "mean": 0.0,
+              "ci_low": -0.04522613065326633,
+              "ci_high": 0.05025125628140704,
+              "n": 199
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.47474747474747475,
+              "n_cf": 94,
+              "n_total": 198
+            },
+            "ad": {
+              "ad": 0.07575757575757569,
+              "expected_privileged": 3.313131313131313,
+              "expected_unprivileged": 3.388888888888889
+            },
+            "mcnemar": {
+              "statistic": 2.960526315789474,
+              "p_value": 0.08532016423546196,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.16247128608407824,
+              "p_a": 0.41414141414141414,
+              "p_b": 0.494949494949495,
+              "n": 198
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.8341708542713567,
+              "n_cf": 166,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.01005025125628145,
+              "acc_privileged": 0.7889447236180904,
+              "acc_unprivileged": 0.7989949748743719
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.8388197422027588,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.02485068774899668,
+              "p_a": 0.7889447236180904,
+              "p_b": 0.7989949748743719,
+              "n": 199
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.55,
+              "n_cf": 110,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.05500000000000016,
+              "expected_privileged": 3.28,
+              "expected_unprivileged": 3.335
+            },
+            "mcnemar": {
+              "statistic": 0.22535211267605634,
+              "p_value": 0.6349917907446544,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.0503394696952606,
+              "p_a": 0.455,
+              "p_b": 0.43,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.855,
+              "n_cf": 171,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.014999999999999902,
+              "acc_privileged": 0.81,
+              "acc_unprivileged": 0.825
+            },
+            "mcnemar": {
+              "statistic": 0.16,
+              "p_value": 0.6891565167793516,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.03884173352298381,
+              "p_a": 0.81,
+              "p_b": 0.825,
+              "n": 200
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.583756345177665,
+              "n_cf": 115,
+              "n_total": 197
+            },
+            "ad": {
+              "ad": 0.040609137055837685,
+              "expected_privileged": 3.3553299492385786,
+              "expected_unprivileged": 3.314720812182741
+            },
+            "mcnemar": {
+              "statistic": 1.396551724137931,
+              "p_value": 0.2373017786499999,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.10204386060450221,
+              "p_a": 0.4263959390862944,
+              "p_b": 0.47715736040609136,
+              "n": 197
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.8492462311557789,
+              "n_cf": 169,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.05422110552763815,
+              "acc_privileged": 0.79,
+              "acc_unprivileged": 0.8442211055276382
+            },
+            "mcnemar": {
+              "statistic": 3.1153846153846154,
+              "p_value": 0.07755616674366561,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.1308295955572536,
+              "p_a": 0.7939698492462312,
+              "p_b": 0.8442211055276382,
+              "n": 199
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": 0.06060606060606061,
+              "ci_low": -0.08080808080808081,
+              "ci_high": 0.20202020202020202,
+              "n": 198
+            },
+            "usmle": {
+              "mean": 0.005025125628140704,
+              "ci_low": -0.04522613065326633,
+              "ci_high": 0.05527638190954774,
+              "n": 199
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": 0.01,
+              "ci_low": -0.14,
+              "ci_high": 0.15,
+              "n": 200
+            },
+            "usmle": {
+              "mean": -0.02512562814070352,
+              "ci_low": -0.07537688442211055,
+              "ci_high": 0.02512562814070352,
+              "n": 199
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.5959595959595959,
+              "n_cf": 118,
+              "n_total": 198
+            },
+            "ad": {
+              "ad": 0.06060606060606055,
+              "expected_privileged": 3.409090909090909,
+              "expected_unprivileged": 3.3484848484848486
+            },
+            "mcnemar": {
+              "statistic": 0.016666666666666666,
+              "p_value": 0.897278961260083,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.0,
+              "p_a": 0.4393939393939394,
+              "p_b": 0.4393939393939394,
+              "n": 198
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.8592964824120602,
+              "n_cf": 171,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.045226130653266305,
+              "acc_privileged": 0.8040201005025126,
+              "acc_unprivileged": 0.8492462311557789
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.0931396484375,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.1196990012999497,
+              "p_a": 0.8040201005025126,
+              "p_b": 0.8492462311557789,
+              "n": 199
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.53,
+              "n_cf": 106,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.01499999999999968,
+              "expected_privileged": 3.34,
+              "expected_unprivileged": 3.325
+            },
+            "mcnemar": {
+              "statistic": 0.7,
+              "p_value": 0.40278369424647553,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.0804735921374995,
+              "p_a": 0.5025125628140703,
+              "p_b": 0.4623115577889447,
+              "n": 199
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.8492462311557789,
+              "n_cf": 169,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.03603015075376881,
+              "acc_privileged": 0.7939698492462312,
+              "acc_unprivileged": 0.83
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.15158963203430176,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.10346777581353672,
+              "p_a": 0.7939698492462312,
+              "p_b": 0.8341708542713567,
+              "n": 199
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.51010101010101,
+              "n_cf": 101,
+              "n_total": 198
+            },
+            "ad": {
+              "ad": 0.11111111111111116,
+              "expected_privileged": 3.4343434343434343,
+              "expected_unprivileged": 3.323232323232323
+            },
+            "mcnemar": {
+              "statistic": 0.4931506849315068,
+              "p_value": 0.4825252123138821,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.07072271162883359,
+              "p_a": 0.48484848484848486,
+              "p_b": 0.5202020202020202,
+              "n": 198
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.8542713567839196,
+              "n_cf": 170,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.005025125628140725,
+              "acc_privileged": 0.8190954773869347,
+              "acc_unprivileged": 0.8140703517587939
+            },
+            "mcnemar": {
+              "statistic": 0.0,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.012984823816915902,
+              "p_a": 0.8190954773869347,
+              "p_b": 0.8140703517587939,
+              "n": 199
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": 0.1414141414141414,
+              "ci_low": 0.0,
+              "ci_high": 0.29292929292929293,
+              "n": 198
+            },
+            "usmle": {
+              "mean": -0.06030150753768844,
+              "ci_low": -0.10552763819095477,
+              "ci_high": -0.010050251256281407,
+              "n": 199
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": 0.05527638190954774,
+              "ci_low": -0.09547738693467336,
+              "ci_high": 0.21105527638190955,
+              "n": 199
+            },
+            "usmle": {
+              "mean": -0.02512562814070352,
+              "ci_low": -0.08040201005025126,
+              "ci_high": 0.02512562814070352,
+              "n": 199
+            }
+          }
+        }
+      }
+    },
+    "Gemini-3.8-Flash": {
+      "ses": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.89,
+              "n_cf": 178,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0,
+              "expected_privileged": 2.98,
+              "expected_unprivileged": 2.98
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.01685689715254368,
+              "p_a": 0.1,
+              "p_b": 0.095,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.99,
+              "n_cf": 198,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0,
+              "acc_privileged": 0.985,
+              "acc_unprivileged": 0.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.0,
+              "p_a": 0.985,
+              "p_b": 0.985,
+              "n": 200
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.895,
+              "n_cf": 179,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.004999999999999893,
+              "expected_privileged": 3.045,
+              "expected_unprivileged": 3.04
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.01870207144302538,
+              "p_a": 0.075,
+              "p_b": 0.08,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.98,
+              "acc_unprivileged": 0.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.03822859169303605,
+              "p_a": 0.98,
+              "p_b": 0.985,
+              "n": 200
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.9,
+              "n_cf": 180,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.02499999999999991,
+              "expected_privileged": 2.97,
+              "expected_unprivileged": 2.995
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.063568115234375,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.16505320304660287,
+              "p_a": 0.105,
+              "p_b": 0.06,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.985,
+              "acc_unprivileged": 0.99
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.04523067519217161,
+              "p_a": 0.985,
+              "p_b": 0.99,
+              "n": 200
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": -0.025,
+              "ci_low": -0.105,
+              "ci_high": 0.04,
+              "n": 200
+            },
+            "usmle": {
+              "mean": 0.01,
+              "ci_low": 0.0,
+              "ci_high": 0.025,
+              "n": 200
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": 0.04,
+              "ci_low": -0.025,
+              "ci_high": 0.1,
+              "n": 200
+            },
+            "usmle": {
+              "mean": -0.005,
+              "ci_low": -0.015,
+              "ci_high": 0.0,
+              "n": 200
+            }
+          }
+        }
+      },
+      "race": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.8844221105527639,
+              "n_cf": 176,
+              "n_total": 199
+            },
+            "ad": {
+              "ad": 0.015075376884421843,
+              "expected_privileged": 2.9396984924623117,
+              "expected_unprivileged": 2.9547738693467336
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.4048728942871094,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.07945724198736426,
+              "p_a": 0.10050251256281408,
+              "p_b": 0.12562814070351758,
+              "n": 199
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.99,
+              "n_cf": 198,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.010000000000000009,
+              "acc_privileged": 0.99,
+              "acc_unprivileged": 0.98
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.5,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.08345926688520766,
+              "p_a": 0.99,
+              "p_b": 0.98,
+              "n": 200
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.915,
+              "n_cf": 183,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.020000000000000018,
+              "expected_privileged": 3.035,
+              "expected_unprivileged": 3.015
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.803619384765625,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.03411580076248932,
+              "p_a": 0.1,
+              "p_b": 0.09,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 1.0,
+              "n_cf": 200,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0,
+              "acc_privileged": 0.98,
+              "acc_unprivileged": 0.98
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.0,
+              "p_a": 0.98,
+              "p_b": 0.98,
+              "n": 200
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.94,
+              "n_cf": 188,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.004999999999999893,
+              "expected_privileged": 2.975,
+              "expected_unprivileged": 2.97
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.0,
+              "p_a": 0.13,
+              "p_b": 0.13,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.98,
+              "acc_unprivileged": 0.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.03822859169303605,
+              "p_a": 0.98,
+              "p_b": 0.985,
+              "n": 200
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": -0.08542713567839195,
+              "ci_low": -0.17587939698492464,
+              "ci_high": -0.005025125628140704,
+              "n": 199
+            },
+            "usmle": {
+              "mean": 0.0,
+              "ci_low": -0.015,
+              "ci_high": 0.015,
+              "n": 200
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": 0.005,
+              "ci_low": -0.05,
+              "ci_high": 0.06,
+              "n": 200
+            },
+            "usmle": {
+              "mean": 0.0,
+              "ci_low": -0.015,
+              "ci_high": 0.015,
+              "n": 200
+            }
+          }
+        }
+      },
+      "sex": {
+        "EXP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.945,
+              "n_cf": 189,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.004999999999999893,
+              "expected_privileged": 2.985,
+              "expected_unprivileged": 2.98
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.34375,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.06531096348557619,
+              "p_a": 0.095,
+              "p_b": 0.115,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.985,
+              "acc_unprivileged": 0.99
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.04523067519217161,
+              "p_a": 0.985,
+              "p_b": 0.99,
+              "n": 200
+            }
+          }
+        },
+        "PRX": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.9,
+              "n_cf": 180,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.015000000000000124,
+              "expected_privileged": 3.025,
+              "expected_unprivileged": 3.04
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 0.359283447265625,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": 0.0864742249644016,
+              "p_a": 0.105,
+              "p_b": 0.08,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.98,
+              "acc_unprivileged": 0.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": -0.03822859169303605,
+              "p_a": 0.98,
+              "p_b": 0.985,
+              "n": 200
+            }
+          }
+        },
+        "IMP": {
+          "esi": {
+            "cfr": {
+              "cfr": 0.88,
+              "n_cf": 176,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.015000000000000124,
+              "expected_privileged": 3.0,
+              "expected_unprivileged": 2.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "esi_binary_vs_neutral",
+              "cohens_h": -0.014748407710087896,
+              "p_a": 0.13,
+              "p_b": 0.135,
+              "n": 200
+            }
+          },
+          "usmle": {
+            "cfr": {
+              "cfr": 0.995,
+              "n_cf": 199,
+              "n_total": 200
+            },
+            "ad": {
+              "ad": 0.0050000000000000044,
+              "acc_privileged": 0.99,
+              "acc_unprivileged": 0.985
+            },
+            "mcnemar": {
+              "statistic": null,
+              "p_value": 1.0,
+              "method": "usmle_ground_truth",
+              "cohens_h": 0.04523067519217161,
+              "p_a": 0.99,
+              "p_b": 0.985,
+              "n": 200
+            }
+          }
+        },
+        "paraphrase_excess": {
+          "EXP": {
+            "esi": {
+              "mean": -0.055,
+              "ci_low": -0.15,
+              "ci_high": 0.04,
+              "n": 200
+            },
+            "usmle": {
+              "mean": 0.005,
+              "ci_low": 0.0,
+              "ci_high": 0.015,
+              "n": 200
+            }
+          },
+          "PRX": {
+            "esi": {
+              "mean": -0.015,
+              "ci_low": -0.08,
+              "ci_high": 0.05,
+              "n": 200
+            },
+            "usmle": {
+              "mean": 0.0,
+              "ci_low": 0.0,
+              "ci_high": 0.0,
+              "n": 200
+            }
+          }
+        }
+      }
+    }
+  },
+  "redaction": {
+    "DeepSeek-V4-Flash": {
+      "esi": {
+        "reversion_fraction": 2.8571428571428568,
+        "n": 200,
+        "mean_delta_e_plus": 0.035,
+        "mean_delta_redact": -0.065
+      },
+      "usmle": {
+        "reversion_fraction": 0.11111111111111105,
+        "n": 198,
+        "mean_delta_e_plus": 0.13636363636363635,
+        "mean_delta_redact": 0.12121212121212122
+      }
+    },
+    "Gemini-3.8-Flash": {
+      "esi": {
+        "reversion_fraction": 0.25,
+        "n": 200,
+        "mean_delta_e_plus": -0.02,
+        "mean_delta_redact": -0.015
+      },
+      "usmle": {
+        "reversion_fraction": 1.0,
+        "n": 200,
+        "mean_delta_e_plus": 0.005,
+        "mean_delta_redact": 0.0
+      }
+    }
+  },
+  "rec_conformity": {
+    "DeepSeek-V4-Flash": {
+      "rec_up": {
+        "shifts": 79,
+        "total": 198,
+        "rate": 0.398989898989899,
+        "ci_low": 0.33332770554890034,
+        "ci_high": 0.46849709171786724
+      },
+      "rec_down": {
+        "shifts": 57,
+        "total": 152,
+        "rate": 0.375,
+        "ci_low": 0.30200902866079593,
+        "ci_high": 0.4541536390736216
+      },
+      "usmle_yield": {
+        "yields": 46,
+        "eligible": 166,
+        "rate": 0.27710843373493976,
+        "ci_low": 0.21464895836591302,
+        "ci_high": 0.34965095402304225
+      },
+      "combined_vs_separate": {
+        "esi_divergence": 89,
+        "esi_compared": 196,
+        "usmle_divergence": 47,
+        "usmle_compared": 198
+      }
+    },
+    "Gemini-3.8-Flash": {
+      "rec_up": {
+        "shifts": 25,
+        "total": 189,
+        "rate": 0.13227513227513227,
+        "ci_low": 0.09122533565995752,
+        "ci_high": 0.18797583255271025
+      },
+      "rec_down": {
+        "shifts": 27,
+        "total": 160,
+        "rate": 0.16875,
+        "ci_low": 0.11864352018350914,
+        "ci_high": 0.2343901415971375
+      },
+      "usmle_yield": {
+        "yields": 176,
+        "eligible": 195,
+        "rate": 0.9025641025641026,
+        "ci_low": 0.8528399357905011,
+        "ci_high": 0.9367332722303557
+      },
+      "combined_vs_separate": {
+        "esi_divergence": 15,
+        "esi_compared": 200,
+        "usmle_divergence": 28,
+        "usmle_compared": 200
+      }
+    }
+  }
+}
