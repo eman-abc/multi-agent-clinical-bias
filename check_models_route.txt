@@ -1,0 +1,8 @@
+OK    Agent A (generator): openai/gpt-6-luna       5.7s  replied 'YES'
+OK    Validator: openai/gpt-6-luna                 3.9s  replied 'YES'
+OK    Agent B: DeepSeek-V4-Flash [esi]             0.5s  top_class '2', raw '2', raw length 1
+OK    Agent B: DeepSeek-V4-Flash [usmle]           0.7s  top_class 'A', raw 'A', raw length 1
+OK    Agent B: GPT-6-Luna [esi]                    3.6s  top_class '2', raw '2', raw length 1
+OK    Agent B: GPT-6-Luna [usmle]                  4.2s  top_class 'A', raw 'A', raw length 1
+FAIL  Agent B: Gemini-3.8-Flash [esi]              2.4s  top_class '2', raw '2)', raw length 2  <- NOT a single clean token: the answer parser is unsafe for this model
+OK    Agent B: Gemini-3.8-Flash [usmle]            3.2s  top_class 'A', raw 'A', raw length 1

@@ -1,0 +1,29 @@
+{
+ "name": "p1v2",
+ "frozen_utc": "2026-10-20 08:15:42",
+ "stage": "after data collection, before analysis",
+ "run": "p1v2_run1",
+ "stim": "p1v2_data\\stimuli_luna_p0.jsonl",
+ "cases": "p1v2_data\\banks\\p1v2_bank_main\\cases_clean.jsonl",
+ "plan": "p1v2_analysis/PLAN_p1v2.md",
+ "files": {
+  "p1v2_analysis/PLAN_p1v2.md": "24dd0a082565581e90c186bd9851e65baa565e3ec438cb223cbb49bb4167b7ee",
+  "p1v2_analysis/analyze_p1v2.py": "96eda973d2e64576657707767997d9243cbd5ce9a480c6f7cad519d4c9dd1992",
+  "p1v2_analysis/freeze_p1.py": "dd024e9ef4bfcdd90cb0b7732c6de51861d4bbd3b8c5dc1e82e63b4f9ab61e24",
+  "p1v2_data/stimuli_luna_p0.jsonl": "ed3fc872407f868e158cdf67dcaea35d7f7abdec52e1facf0807978026c8a807",
+  "p1v2_data/banks/p1v2_bank_main/cases_clean.jsonl": "b65c0a86235ecc28c71a100479b17386245a0dbf7a05c99dd131a27e3cc29204",
+  "results/p1v2_run1/steps/01_agent_b_GPT_6_Luna/output.jsonl": "c64d3e21ff276c486c390a7cae154131c4e3d4afecb3ab0d551d407fab38f071",
+  "results/p1v2_run1/steps/02_agent_b_DeepSeek_V4_Flash/output.jsonl": "b5155d1582022bf172d7661bebf0bae6e08a6d9186faae9735a29d857927e46f",
+  "results/p1v2_run1/steps/03_agent_b_Gemini_3_8_Flash/output.jsonl": "f5d7d143c93cfc0cce610f7d4a61ba37e40ddcdcb7dcbd3705179dde38fd6fb7",
+  "results/p1v2_run1/steps/05_agent_b_DeepSeek_V4_Flash/output.jsonl": "3a6bf8f89dd6e3000437f18dac362e5a0ad3dd56e820696347055eedd9c4776e",
+  "results/p1v2_run1/steps/07_agent_b_GPT_6_Luna/output.jsonl": "ee7bfe701b765859e431bd1e7275efcad424bf0eaf3b608de797b76217d35e09",
+  "results/p1v2_run1/steps/08_agent_b_Gemini_3_8_Flash/output.jsonl": "db0025dd919088624905f30825e732502a4ec97e704db87efd34531fbe8c59cb",
+  "results/p1v2_run1/steps/09_agent_b_DeepSeek_V4_Flash/output.jsonl": "bcb2e9b92189757aaf9869c162bbf622aa76082b6d3c9c356ab46daceb5078d3",
+  "results/p1v2_run1/steps/10_agent_b_DeepSeek_V4_Flash/output.jsonl": "ac7a6a5840476acd7406ed05657ceea63f347c6bcdde2b46e374a4aeff99becd",
+  "results/p1v2_run1/steps/11_agent_b_Gemini_3_8_Flash/output.jsonl": "d637f05591b76d0d4ed0d6b18c8c99fe2a08e2ebc5be82f936730e6046cd7bc7",
+  "results/p1v2_run1/steps/12_agent_b_GPT_6_Luna/output.jsonl": "c22d89f740fa0c873e7078f61e17f804ab65ece7221c056ad79dab31059ebe87",
+  "results/p1v2_run1/steps/13_agent_b_DeepSeek_V4_Flash/output.jsonl": "0b53d58986e474121bfcf5e303eb3af7446d91ac2419e1652f819e2c3d5af7a2",
+  "results/p1v2_run1/steps/14_agent_b_Gemini_3_8_Flash/output.jsonl": "b9051a40a193f094cbfc3263259b18e58ff90a6d199033699ed06b3ca3d67bf0",
+  "results/p1v2_run1/steps/16_agent_b_DeepSeek_V4_Flash/output.jsonl": "79d656be5cea6a1ba4cd093921d23c113a12edc4551eff5e59c429a33f6595c6"
+ }
+}

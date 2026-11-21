@@ -51,6 +51,7 @@ from shared.config_and_utils import (
     BASELINE_TEMPERATURE,
     DRY_RUN,
     EXPERIMENT_5_LOW_TEMPERATURE,
+    EXPLORATORY_HIGH_TEMPERATURE,
     N_CASES_GO_NO_GO,
     _is_content_filter_error,
 )
@@ -174,6 +175,16 @@ class ObservationRecord:
     # measurement. Including this in key() makes a logprobs observation
     # and a one-hot observation at the same temperature genuinely
     # distinct, non-colliding entries.
+    note_text: str | None = None
+    # NEW -- the actual clinical note Agent B read. Previously generated
+    # by Agent A, used for the API call, and discarded; this is the same
+    # reusability/auditability gap fixed in run_full_conditional_
+    # sycophancy.py, now fixed here too. NOT part of key() -- this is
+    # payload, not identity, so adding it cannot affect dedup/resumability
+    # for any existing checkpoint file.
+    agent_b_raw_text: str | None = None
+    # NEW -- Agent B's raw response text, alongside the parsed top_class/
+    # class_probabilities. Also not part of key().
 
     def key(self) -> str:
         """Unique key for resumability/dedup checkpointing."""
@@ -210,7 +221,18 @@ class JSONLCheckpoint:
                     line = line.strip()
                     if not line:
                         continue
-                    record = json.loads(line)
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        # A truncated/corrupted last line -- confirmed real
+                        # scenario: an unclean shutdown (power loss, killed
+                        # process) can leave a write that never finished
+                        # flushing to disk. Without this, resuming after
+                        # EXACTLY the interruption this class exists to
+                        # survive would crash here, before any resume logic
+                        # even runs. Skip it; that one observation is
+                        # correctly treated as not-yet-done and gets redone.
+                        continue
                     key = record.get("_key")
                     if key:
                         self._seen_keys.add(key)
@@ -232,8 +254,12 @@ class JSONLCheckpoint:
         with self.path.open("r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                if line:
+                if not line:
+                    continue
+                try:
                     records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue  # same truncated-last-line case as __init__ above
         return records
 
 
@@ -501,9 +527,7 @@ def _process_one_case_for_sweep(
                             case, spec, neutral_note=neutral_cache.get(case.question_id), dry_run=dry_run
                         )
                     else:
-                        logger.debug("[experiments] Starting generate_note: case_id=%s, attribute=%s, spec=%s", case.question_id, attribute.value, spec)
                         validated = pipe.generate_note(case, spec, dry_run=dry_run)
-                        logger.debug("[experiments] Finished generate_note: case_id=%s, blocked=%s", case.question_id, validated.blocked_reason)
                 except (pipe.UnimplementedConditionError, NotImplementedError) as exc:
                     blocked_key = (
                         f"{attribute.value}:{spec.condition_label.value}:"
@@ -532,6 +556,7 @@ def _process_one_case_for_sweep(
                         signal_type=spec.signal_type.value if spec.signal_type else None,
                         model="n/a", task="n/a", temperature=temperature, top_class=None,
                         class_probabilities=None, validation_passed=None, blocked_reason=validated.blocked_reason,
+                        note_text=validated.note_text,
                     )
                     if not checkpoint.has(blocked_record):
                         records_to_append.append(blocked_record)
@@ -558,19 +583,18 @@ def _process_one_case_for_sweep(
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
                         logprobs_available=use_chat_completions and use_logprobs,
+                        note_text=validated.note_text,
                     )
                     if checkpoint.has(record):
                         continue
                     if use_chat_completions:
                         model_id, base_url, api_key, extra_body = _resolve_model_connection(model)
-                        logger.debug("[experiments] Calling Agent B: case_id=%s, model=%s, task=%s", case.question_id, _model_display_name(model), task)
                         if task == "esi":
                             esi_fn = inf.run_esi_triage_chat_completions_logprobs if use_logprobs else inf.run_esi_triage_chat_completions
                             result = _call_chat_completions_safe(
                                 esi_fn, validated.note_text, model=model_id, temperature=temperature,
                                 base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
-                            logger.debug("[experiments] Agent B returned: case_id=%s, model=%s, task=%s, result=%s", case.question_id, _model_display_name(model), task, getattr(result, 'top_class', None) if result is not None else 'BLOCKED')
                         else:
                             usmle_fn = inf.run_usmle_diagnostic_chat_completions_logprobs if use_logprobs else inf.run_usmle_diagnostic_chat_completions
                             result = _call_chat_completions_safe(
@@ -578,7 +602,6 @@ def _process_one_case_for_sweep(
                                 model=model_id, temperature=temperature,
                                 base_url=base_url, api_key=api_key, extra_body=extra_body,
                             )
-                        logger.debug("[experiments] Agent B returned: case_id=%s, model=%s, task=%s, result=%s", case.question_id, _model_display_name(model), task, getattr(result, 'top_class', None) if result is not None else 'BLOCKED')
                         local_counts["agent_b"] += 1
                         if result is None:
                             local_counts["content_filter_blocks"] += 1
@@ -598,6 +621,7 @@ def _process_one_case_for_sweep(
                         local_counts["agent_b"] += 1
                     record.top_class = result.top_class
                     record.class_probabilities = result.class_probabilities
+                    record.agent_b_raw_text = getattr(result, "raw_text", None)
                     records_to_append.append(record)
 
     return records_to_append, local_counts
@@ -880,6 +904,7 @@ def run_experiment_3(
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
                         logprobs_available=use_chat_completions and use_logprobs,
+                        note_text=validated.note_text,
                     )
                     if checkpoint.has(record):
                         continue
@@ -926,6 +951,7 @@ def run_experiment_3(
                         tracker.record_inference()
                     record.top_class = result.top_class
                     record.class_probabilities = result.class_probabilities
+                    record.agent_b_raw_text = getattr(result, "raw_text", None)
                     checkpoint.append(record)
 
         elapsed = time.time() - start_time
@@ -1075,6 +1101,7 @@ def run_experiment_rec(
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
                         logprobs_available=use_logprobs,
+                        note_text=validated.note_text,
                     )
                     if checkpoint.has(record):
                         continue
@@ -1109,6 +1136,7 @@ def run_experiment_rec(
                         usmle_top_class = result.top_class
                     record.top_class = result.top_class
                     record.class_probabilities = result.class_probabilities
+                    record.agent_b_raw_text = getattr(result, "raw_text", None)
                     checkpoint.append(record)
 
                 if run_combined_context_on_rec_wrong and spec.condition_label is cond.ConditionLabel.REC_WRONG:
@@ -1117,14 +1145,14 @@ def run_experiment_rec(
                         condition_label=spec.condition_label.value, signal_type=None, model=model_display,
                         task="esi_combined", temperature=temperature, top_class=None,
                         class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
-                        logprobs_available=use_logprobs,
+                        logprobs_available=use_logprobs, note_text=validated.note_text,
                     )
                     combined_usmle_record = ObservationRecord(
                         experiment="experiment_rec", case_id=case.question_id, attribute=None,
                         condition_label=spec.condition_label.value, signal_type=None, model=model_display,
                         task="usmle_combined", temperature=temperature, top_class=None,
                         class_probabilities=None, validation_passed=validated.validation_passed, blocked_reason=None,
-                        logprobs_available=use_logprobs,
+                        logprobs_available=use_logprobs, note_text=validated.note_text,
                     )
                     if not (checkpoint.has(combined_esi_record) and checkpoint.has(combined_usmle_record)):
                         combined_fn = inf.run_esi_then_usmle_combined_chat_completions_logprobs if use_logprobs else inf.run_esi_then_usmle_combined_chat_completions
@@ -1144,8 +1172,10 @@ def run_experiment_rec(
                         else:
                             combined_esi_record.top_class = combined.esi_result.top_class
                             combined_esi_record.class_probabilities = combined.esi_result.class_probabilities
+                            combined_esi_record.agent_b_raw_text = getattr(combined.esi_result, "raw_text", None)
                             combined_usmle_record.top_class = combined.usmle_result.top_class
                             combined_usmle_record.class_probabilities = combined.usmle_result.class_probabilities
+                            combined_usmle_record.agent_b_raw_text = getattr(combined.usmle_result, "raw_text", None)
                             checkpoint.append(combined_esi_record)
                             checkpoint.append(combined_usmle_record)
 
@@ -1215,21 +1245,40 @@ def run_experiment_5(
     checkpoint_path: str | Path = "phase0_results/experiment_5.jsonl",
     n_cases: int = N_CASES_GO_NO_GO,
     dry_run: bool | None = None,
+    chat_completions_models: list | None = None,
 ) -> ExperimentRunResult:
     """
-    Experiment 5 (§11) — Okawa temperature-modulation check. E+ (PRX, SES) at
-    T=0.2 (new) and T=0.8, ESI task only. Runs both temperatures
-    self-contained (doesn't require Experiment 2 to have been run first).
-    Fully implemented, no blocked conditions.
+    Experiment 5 (§11) — Okawa temperature-modulation check. E+ (PRX, SES)
+    vs. N (neutral), ESI task only, across THREE temperatures:
+    BASELINE_TEMPERATURE (0.0), EXPERIMENT_5_LOW_TEMPERATURE (0.2), and
+    EXPLORATORY_HIGH_TEMPERATURE (0.8) -- confirmed real gap: the previous
+    version of this function only ever ran two of these three (0.2 and
+    0.0), silently dropping 0.8 even though the constant existed and the
+    original Okawa-derived design called for all three. Also confirmed
+    real gap: this function used to call inf.run_esi_triage(...,
+    model=model) against the LOCAL/HF AGENT_B_MODELS registry -- the
+    open-weight path this project never actually had GPU access to run --
+    rather than the API-based AGENT_B_API_MODELS registry (DeepSeek/Luna/
+    Gemini) every other experiment in this file actually uses. Rewritten
+    to use the same chat-completions machinery (_call_chat_completions_
+    safe, _resolve_model_connection) as Experiments 1/2/3/rec, so this is
+    finally runnable against the models this project can actually reach.
+    Runs self-contained (doesn't require Experiment 2 to have been run
+    first). note_text/agent_b_raw_text captured, matching every other
+    experiment in this file.
     """
     tracker = APICallTracker()
     checkpoint = JSONLCheckpoint(checkpoint_path)
+    models = chat_completions_models if chat_completions_models is not None else list(AGENT_B_API_MODELS)
 
     amqa_records = load_amqa_dataset(dry_run=dry_run, mock_n=max(n_cases, 1))
     cases = sample_cases(amqa_records, n_cases, seed=42)
 
-    for temperature in (EXPERIMENT_5_LOW_TEMPERATURE, BASELINE_TEMPERATURE):
-        for case in cases:
+    temperatures = (BASELINE_TEMPERATURE, EXPERIMENT_5_LOW_TEMPERATURE, EXPLORATORY_HIGH_TEMPERATURE)
+    print(f"[experiment_5] Temperatures to run: {temperatures}. Models: {[m.display_name for m in models]}.")
+
+    for temperature in temperatures:
+        for case_index, case in enumerate(cases, start=1):
             matrix = cond.build_cross_attribute_conditions(case.question_id, Attribute.SES)
             e_plus = next(
                 s
@@ -1245,10 +1294,10 @@ def run_experiment_5(
                     case_id=case.question_id,
                     attribute=Attribute.SES.value,
                     spec=spec,
-                    models=list(AGENT_B_MODELS),
+                    models=models,
                     tasks=("esi",),  # ESI only, per spec
                     temperature=temperature,
-                    logprobs_available=True,  # legacy Completions path -- genuine logprobs when the server returns them
+                    logprobs_available=False,  # one-hot, same reason as every other experiment in this file (see module docstring)
                 ):
                     continue
 
@@ -1256,7 +1305,7 @@ def run_experiment_5(
                 tracker.record_generation()
                 tracker.record_validation(_validation_calls_for(spec))
 
-                for model in AGENT_B_MODELS:
+                for model in models:
                     record = ObservationRecord(
                         experiment="experiment_5",
                         case_id=case.question_id,
@@ -1270,17 +1319,29 @@ def run_experiment_5(
                         class_probabilities=None,
                         validation_passed=validated.validation_passed,
                         blocked_reason=None,
-                        logprobs_available=True,
+                        logprobs_available=False,
+                        note_text=validated.note_text,
                     )
                     if checkpoint.has(record):
                         continue
-                    result = inf.run_esi_triage(
-                        validated.note_text, model=model, temperature=temperature, dry_run=dry_run
+                    model_id, base_url, api_key, extra_body = _resolve_model_connection(model)
+                    result = _call_chat_completions_safe(
+                        inf.run_esi_triage_chat_completions,
+                        validated.note_text, model=model_id, temperature=temperature,
+                        base_url=base_url, api_key=api_key, extra_body=extra_body,
                     )
                     tracker.record_inference()
+                    if result is None:
+                        record.blocked_reason = "content_filter_azure"
+                        checkpoint.append(record)
+                        continue
                     record.top_class = result.top_class
                     record.class_probabilities = result.class_probabilities
+                    record.agent_b_raw_text = getattr(result, "raw_text", None)
                     checkpoint.append(record)
+
+            if case_index % 20 == 0 or case_index == len(cases):
+                print(f"[experiment_5] temperature={temperature}: case {case_index}/{len(cases)} done.")
 
     compare_to_budget("experiment_5", tracker)
     return ExperimentRunResult(
@@ -1469,12 +1530,76 @@ def run_experiment_6(
     )
 
 
+# ---------------------------------------------------------------------------
+# CSV export -- a flat, spreadsheet-readable mirror of one or more JSONL
+# checkpoint files, including note_text and agent_b_raw_text (both now
+# captured by every experiment above). Purely additive: reads the existing
+# JSONL files, writes a SEPARATE .csv file, never modifies or truncates
+# the JSONL checkpoints themselves -- so this can be re-run at any time
+# without any risk to the underlying resumable data.
+# ---------------------------------------------------------------------------
+
+CSV_EXPORT_COLUMNS: tuple[str, ...] = (
+    "experiment", "case_id", "attribute", "condition_label", "signal_type",
+    "rec_type", "model", "task", "temperature", "top_class",
+    "class_probabilities", "validation_passed", "validation_attempts",
+    "validation_details", "note_text", "agent_b_raw_text", "blocked_reason",
+    "logprobs_available", "target_letter",
+)
+
+
+def export_jsonl_to_csv(jsonl_paths: list[str | Path], csv_path: str | Path) -> int:
+    """
+    Flattens one or more JSONL checkpoint files into a single CSV, one row
+    per observation, with every field a person might want to audit or
+    hand off (case_id, every perturbation label, the generated note text,
+    Agent B's raw response, the parsed class probabilities as a JSON
+    string so it stays one cell). Fields not present in a given file's
+    schema (e.g. rec_type doesn't exist in experiment_1/2/3/5's records;
+    note_text doesn't exist in older files predating this feature) are
+    written as an empty cell rather than raising -- this must not crash
+    on any mix of old and new schema files. Returns the row count written.
+    """
+    import csv as _csv
+
+    csv_path = Path(csv_path)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    rows_written = 0
+    with csv_path.open("w", newline="", encoding="utf-8") as out_f:
+        writer = _csv.DictWriter(out_f, fieldnames=list(CSV_EXPORT_COLUMNS), extrasaction="ignore")
+        writer.writeheader()
+        for jsonl_path in jsonl_paths:
+            jsonl_path = Path(jsonl_path)
+            if not jsonl_path.exists():
+                continue
+            with jsonl_path.open("r", encoding="utf-8") as in_f:
+                for line in in_f:
+                    if not line.strip():
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # a torn last line from an interrupted run -- same handling as JSONLCheckpoint itself
+                    row = {}
+                    for col in CSV_EXPORT_COLUMNS:
+                        value = record.get(col)
+                        if isinstance(value, (dict, list)):
+                            value = json.dumps(value)
+                        row[col] = value
+                    writer.writerow(row)
+                    rows_written += 1
+    return rows_written
+
+
 __all__ = [
     "ObservationRecord",
     "JSONLCheckpoint",
     "APICallTracker",
     "API_CALL_BUDGET",
     "compare_to_budget",
+    "export_jsonl_to_csv",
+    "CSV_EXPORT_COLUMNS",
     "ExperimentRunResult",
     "run_experiment_1",
     "run_experiment_2",

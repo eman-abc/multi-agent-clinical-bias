@@ -1,0 +1,152 @@
+﻿140 cases have a plain neutral note
+
+=== attribute=race  signal=EXP  condition=E+  (140 notes; 31 distinct spans recurring in >= 3 cases) ===
+     44 cases  ( 1 words)  White
+     32 cases  ( 1 words)  A
+     15 cases  ( 1 words)  is
+     13 cases  ( 1 words)  presents
+      9 cases  ( 1 words)  their
+      8 cases  ( 1 words)  of
+
+=== attribute=race  signal=EXP  condition=E-  (140 notes; 31 distinct spans recurring in >= 3 cases) ===
+     42 cases  ( 1 words)  Black
+     31 cases  ( 1 words)  A
+     18 cases  ( 2 words)  Black patient
+     14 cases  ( 1 words)  is
+      9 cases  ( 1 words)  and
+      9 cases  ( 1 words)  presents
+
+=== attribute=race  signal=IMP  condition=E+  (140 notes; 34 distinct spans recurring in >= 3 cases) ===
+     16 cases  ( 1 words)  patient
+     13 cases  ( 1 words)  their
+     12 cases  ( 1 words)  presenting
+     10 cases  ( 1 words)  who
+      8 cases  ( 1 words)  of
+      8 cases  ( 1 words)  and
+
+=== attribute=race  signal=IMP  condition=E-  (140 notes; 43 distinct spans recurring in >= 3 cases) ===
+     22 cases  ( 1 words)  patient
+     13 cases  ( 1 words)  their
+     13 cases  ( 1 words)  who
+     11 cases  ( 1 words)  presenting
+      9 cases  ( 1 words)  is
+      8 cases  ( 1 words)  a
+
+=== attribute=race  signal=PRX  condition=E+  (140 notes; 42 distinct spans recurring in >= 3 cases) ===
+     14 cases  ( 1 words)  presents
+      9 cases  ( 1 words)  their
+      9 cases  ( 1 words)  reports
+      8 cases  ( 3 words)  Massachusetts General Hospital
+      7 cases  ( 1 words)  is
+      7 cases  ( 1 words)  a
+   most common last lines: [('Massachusetts General Hospital', 6), ('Carrie Ryan', 6), ('Allison Murphy', 5)]
+
+=== attribute=race  signal=PRX  condition=E-  (140 notes; 35 distinct spans recurring in >= 3 cases) ===
+     13 cases  ( 1 words)  presents
+     13 cases  ( 1 words)  is
+     12 cases  ( 3 words)  patient is a
+      9 cases  ( 1 words)  who
+      8 cases  ( 3 words)  Boston Medical Center
+      8 cases  ( 1 words)  with
+   most common last lines: [('Carney Hospital', 7), ('Tanisha Washington', 5), ('Boston Medical Center', 4)]
+
+=== attribute=ses  signal=EXP  condition=E+  (140 notes; 27 distinct spans recurring in >= 3 cases) ===
+     41 cases  ( 1 words)  high-income
+     35 cases  ( 2 words)  high-income patient
+     25 cases  ( 3 words)  patient is a
+     18 cases  ( 1 words)  their
+     17 cases  ( 1 words)  is
+     10 cases  ( 1 words)  who
+
+=== attribute=ses  signal=EXP  condition=E-  (140 notes; 28 distinct spans recurring in >= 3 cases) ===
+     44 cases  ( 1 words)  low-income
+     32 cases  ( 2 words)  low-income patient
+     24 cases  ( 3 words)  patient is a
+     17 cases  ( 1 words)  their
+     15 cases  ( 1 words)  is
+     10 cases  ( 1 words)  who
+
+=== attribute=ses  signal=IMP  condition=E+  (140 notes; 26 distinct spans recurring in >= 3 cases) ===
+     39 cases  ( 5 words)  Insurance is Blue Cross PPO.
+     23 cases  ( 1 words)  presents
+     21 cases  ( 7 words)  The patient has Blue Cross PPO insurance.
+      8 cases  ( 1 words)  and
+      8 cases  ( 1 words)  with
+      7 cases  ( 1 words)  reports
+
+=== attribute=ses  signal=IMP  condition=E-  (140 notes; 23 distinct spans recurring in >= 3 cases) ===
+     26 cases  ( 1 words)  presents
+     23 cases  ( 3 words)  Insurance is Medicaid.
+     17 cases  ( 5 words)  The patient has Medicaid insurance.
+     12 cases  ( 1 words)  with
+     10 cases  ( 1 words)  is
+      9 cases  ( 1 words)  of
+
+=== attribute=ses  signal=PRX  condition=E+  (140 notes; 32 distinct spans recurring in >= 3 cases) ===
+     93 cases  ( 4 words)  Insurance: Blue Cross PPO.
+     24 cases  ( 4 words)  Insurance: Blue Cross PPO
+     17 cases  ( 1 words)  presents
+     12 cases  ( 1 words)  and
+     11 cases  ( 1 words)  with
+      8 cases  ( 1 words)  the
+   most common last lines: [('Insurance: Blue Cross PPO', 5), ("I'm sorry, but I cannot assist with that request.", 3), ('The patient presents as a healthy 23-year-old undergoing an exercise stress test', 1)]
+
+=== attribute=ses  signal=PRX  condition=E-  (140 notes; 27 distinct spans recurring in >= 3 cases) ===
+    111 cases  ( 2 words)  Insurance: Medicaid.
+     16 cases  ( 1 words)  presents
+     11 cases  ( 1 words)  with
+      8 cases  ( 1 words)  is
+      6 cases  ( 1 words)  their
+      6 cases  ( 1 words)  of
+   most common last lines: [("I'm sorry, but I cannot assist with that request.", 3), ('The patient presents as a healthy 23-year-old undergoing an exercise stress test', 1), ('The 69-year-old right-handed patient presents to the physician for a routine hea', 1)]
+
+=== attribute=sex  signal=EXP  condition=E+  (140 notes; 34 distinct spans recurring in >= 3 cases) ===
+     44 cases  ( 1 words)  male
+     35 cases  ( 1 words)  A
+     15 cases  ( 1 words)  is
+     13 cases  ( 1 words)  presents
+      9 cases  ( 1 words)  the
+      8 cases  ( 1 words)  a
+
+=== attribute=sex  signal=EXP  condition=E-  (140 notes; 35 distinct spans recurring in >= 3 cases) ===
+     43 cases  ( 1 words)  female
+     32 cases  ( 1 words)  A
+     16 cases  ( 1 words)  presents
+     15 cases  ( 1 words)  is
+     13 cases  ( 1 words)  and
+      8 cases  ( 1 words)  of
+
+=== attribute=sex  signal=IMP  condition=E+  (140 notes; 38 distinct spans recurring in >= 3 cases) ===
+     20 cases  ( 1 words)  patient
+     18 cases  ( 1 words)  who
+     13 cases  ( 1 words)  presenting
+     10 cases  ( 1 words)  their
+      9 cases  ( 1 words)  of
+      8 cases  ( 3 words)  patient, Brendan Baker,
+
+=== attribute=sex  signal=IMP  condition=E-  (140 notes; 34 distinct spans recurring in >= 3 cases) ===
+     24 cases  ( 1 words)  patient
+     22 cases  ( 1 words)  who
+     13 cases  ( 1 words)  their
+      9 cases  ( 5 words)  patient, Jill Baker, is a
+      9 cases  ( 1 words)  presenting
+      8 cases  ( 3 words)  patient, Allison Baker,
+
+=== attribute=sex  signal=PRX  condition=E+  (140 notes; 41 distinct spans recurring in >= 3 cases) ===
+     16 cases  ( 1 words)  presents
+     13 cases  ( 1 words)  with
+      9 cases  ( 1 words)  is
+      8 cases  ( 3 words)  patient is a
+      7 cases  ( 2 words)  Todd Baker
+      6 cases  ( 1 words)  the
+   most common last lines: [('Todd Baker', 6), ('Geoffrey Baker', 5), ('Brad Baker', 5)]
+
+=== attribute=sex  signal=PRX  condition=E-  (140 notes; 35 distinct spans recurring in >= 3 cases) ===
+     12 cases  ( 1 words)  presents
+     10 cases  ( 3 words)  patient is a
+      9 cases  ( 1 words)  with
+      8 cases  ( 1 words)  presenting
+      7 cases  ( 1 words)  is
+      6 cases  ( 1 words)  a
+   most common last lines: [('Carrie Baker', 6), ('Anne Baker', 6), ('Allison Baker', 5)]
+

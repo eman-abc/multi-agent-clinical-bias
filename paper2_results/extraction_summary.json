@@ -1,0 +1,56 @@
+{
+  "source_dir": "phase0_results",
+  "files_scanned": [
+    "phase0_results\\experiment_1.jsonl",
+    "phase0_results\\experiment_2.jsonl",
+    "phase0_results\\experiment_3.jsonl",
+    "phase0_results\\experiment_rec.jsonl",
+    "phase0_results\\experiment_conditional_sycophancy_full_DeepSeek-V4-Flash.jsonl",
+    "phase0_results\\experiment_conditional_sycophancy_full_Gemini-3.8-Flash.jsonl",
+    "phase0_results\\experiment_conditional_sycophancy_full_GPT-5.6-Luna.jsonl"
+  ],
+  "per_source_file": {
+    "experiment_1.jsonl": {
+      "total_records": 32400,
+      "with_note_text": 13051
+    },
+    "experiment_2.jsonl": {
+      "total_records": 9672,
+      "with_note_text": 72
+    },
+    "experiment_3.jsonl": {
+      "total_records": 2400,
+      "with_note_text": 0
+    },
+    "experiment_rec.jsonl": {
+      "total_records": 4800,
+      "with_note_text": 0
+    },
+    "experiment_conditional_sycophancy_full_DeepSeek-V4-Flash.jsonl": {
+      "total_records": 15198,
+      "with_note_text": 15198
+    },
+    "experiment_conditional_sycophancy_full_Gemini-3.8-Flash.jsonl": {
+      "total_records": 15199,
+      "with_note_text": 0
+    },
+    "experiment_conditional_sycophancy_full_GPT-5.6-Luna.jsonl": {
+      "total_records": 25818,
+      "with_note_text": 25818
+    }
+  },
+  "per_model_experiment_files": {
+    "GPT-5.6-Luna__experiment_1.jsonl": 120,
+    "DeepSeek-V4-Flash__experiment_1.jsonl": 3196,
+    "Gemini-3.8-Flash__experiment_1.jsonl": 3240,
+    "GPT-5.6-Luna__experiment_2.jsonl": 36,
+    "DeepSeek-V4-Flash__conditional_sycophancy_full.jsonl": 15198,
+    "GPT-5.6-Luna__conditional_sycophancy_full.jsonl": 25818
+  },
+  "combined_pool": {
+    "output_file": "paper2_results\\extracted_paper1_notes.jsonl",
+    "n_unique_notes_written": 29178,
+    "n_duplicates_same_text_collapsed": 9874,
+    "n_duplicates_conflicting_text": 15087
+  }
+}

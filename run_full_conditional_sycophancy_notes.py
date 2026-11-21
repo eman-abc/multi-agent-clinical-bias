@@ -72,6 +72,7 @@ from shared.inference_engine import (
     run_usmle_diagnostic_chat_completions,
 )
 from shared.metrics import expected_ordinal_value, summarize_with_ci, mcnemar_test, cohens_h
+from shared.experiments import export_jsonl_to_csv
 import analyze_conditional_sycophancy as analysis
 
 
@@ -502,6 +503,18 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument("--output-file", type=str, default=None, help="Override the output JSONL path (default: phase0_results/experiment_conditional_sycophancy_full_<model>.jsonl -- kept per-model so different models' data never collide in one file).")
+    parser.add_argument(
+        "--export-csv", action="store_true",
+        help=(
+            "After the run, also export a flat CSV mirror of this model's output "
+            "JSONL -- one row per observation, including note_text and "
+            "agent_b_raw_text -- to the same filename with a .csv extension. "
+            "Purely additive: reads the JSONL, writes a separate .csv file, "
+            "never modifies the JSONL itself. Note that models collected before "
+            "note_text/validation_details were added (e.g. an older Gemini run) "
+            "will simply have those columns empty, not missing rows."
+        ),
+    )
     args = parser.parse_args()
 
     model_spec = _resolve_model(args.model)
@@ -521,3 +534,8 @@ if __name__ == "__main__":
 
     run_full_matrix_threaded(args.n_cases, args.threads, model_spec=model_spec)
     analyze_results()
+
+    if args.export_csv:
+        csv_path = OUTPUT_FILE.with_suffix(".csv")
+        n_rows = export_jsonl_to_csv([OUTPUT_FILE], csv_path)
+        print(f"\nCSV export ({n_rows} rows) written to: {csv_path}")

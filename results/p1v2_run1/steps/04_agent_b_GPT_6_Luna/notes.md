@@ -1,0 +1,14 @@
+# Step 04_agent_b_GPT_6_Luna
+
+**Purpose.** Agent B = openai/gpt-6-luna: 0 calls (1 draw(s) per stimulus, temperature 0.0); strict answer parsing; resumable
+
+## Input
+- {'kind': 'file', 'path': 'p1v2_data\\stimuli_luna_p0.jsonl', 'sha256': 'ed3fc872407f868e158cdf67dcaea35d7f7abdec52e1facf0807978026c8a807', 'n_lines': 65608}
+
+## Output
+- none
+
+## Notes and decisions
+- 0 of 0 planned calls completed; unparseable answers: 0; transport failures: 0
+
+**Status.** ok (0.55 s, started 2026-10-09T22:53:53+00:00)

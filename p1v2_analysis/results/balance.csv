@@ -1,0 +1,25 @@
+what,letter,share,n
+wrong target letter,A,0.2471626733921816,5551
+wrong target letter,B,0.23959646910466584,5551
+wrong target letter,C,0.2421185372005044,5551
+wrong target letter,D,0.27112232030264816,5551
+correct target letter,A,0.28247162673392184,5551
+correct target letter,B,0.22950819672131148,5551
+correct target letter,C,0.27490542244640603,5551
+correct target letter,D,0.21311475409836064,5551
+GPT-6-Luna baseline answer letter,A,0.28738621586475943,769
+GPT-6-Luna baseline answer letter,B,0.24057217165149544,769
+GPT-6-Luna baseline answer letter,C,0.27308192457737324,769
+GPT-6-Luna baseline answer letter,D,0.19895968790637192,769
+DeepSeek-V4-Flash baseline answer letter,A,0.24031007751937986,774
+DeepSeek-V4-Flash baseline answer letter,B,0.23126614987080105,774
+DeepSeek-V4-Flash baseline answer letter,C,0.28165374677002586,774
+DeepSeek-V4-Flash baseline answer letter,D,0.2467700258397933,774
+Gemini-3.8-Flash baseline answer letter,A,0.2831858407079646,791
+Gemini-3.8-Flash baseline answer letter,B,0.23261694058154236,791
+Gemini-3.8-Flash baseline answer letter,C,0.27307206068268014,791
+Gemini-3.8-Flash baseline answer letter,D,0.2111251580278129,791
+correct answer letter (all cases),A,0.27965043695380776,801
+correct answer letter (all cases),B,0.22971285892634208,801
+correct answer letter (all cases),C,0.2746566791510612,801
+correct answer letter (all cases),D,0.21598002496878901,801

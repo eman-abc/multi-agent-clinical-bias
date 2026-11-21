@@ -1,0 +1,22 @@
+{
+ "step": "clean_cases",
+ "purpose": "split each question into vignette and stem without cutting numbers; flag image-dependent and no-vignette cases; decide per-attribute eligibility",
+ "started_utc": "2026-10-09T21:05:43+00:00",
+ "finished_utc": "2026-10-09T21:05:43+00:00",
+ "seconds": 0.01,
+ "status": "ok",
+ "input": {
+  "kind": "file",
+  "path": "p1v2_data\\cases20.jsonl",
+  "sha256": "528ac59181ac5948f37f5cb8b5a48ef9ad20e13ecdcb38c3edc04444caa3ffb1",
+  "n_lines": 20
+ },
+ "output": {
+  "path": "output.jsonl",
+  "sha256": "ac6d49965c4ddd0b7aa41933971d4162fcad690364a998478ac8b9fa63b108ae",
+  "n_lines": 20
+ },
+ "notes": [
+  "20 cases; excluded 0; ineligible sex/race/ses = 2/0/1"
+ ]
+}

@@ -1,0 +1,87 @@
+{
+ "pool": "paper2_results\\extracted_paper1_notes.jsonl",
+ "carriers_file": "bias_stage0\\carriers_proposed.json",
+ "carriers_sha256": "3a4d0be375eca4d5569aa8ef68e022f4858d7646d0c68da48ba3fe7721ace4e6",
+ "n_cases": 135,
+ "n_records": 3375,
+ "cases_with_plain_note": 140,
+ "refusal_cases_dropped": [
+  "206",
+  "235",
+  "508",
+  "55",
+  "694"
+ ],
+ "cases_with_conflicting_plain_versions": [],
+ "pairs": 1620,
+ "by_cell": {
+  "race|EXP|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 2.0
+  },
+  "race|PRX|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  },
+  "race|PRX|placebo_a": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  },
+  "race|PRX|placebo_b": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  },
+  "ses|EXP|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 3.0
+  },
+  "ses|PRX|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0.13,
+   "mean_share_of_words_in_footer_pct": 2.7
+  },
+  "ses|PRX|placebo_a": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0.24,
+   "mean_share_of_words_in_footer_pct": 2.8
+  },
+  "ses|PRX|placebo_b": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0.24,
+   "mean_share_of_words_in_footer_pct": 2.9
+  },
+  "sex|EXP|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 2.0
+  },
+  "sex|PRX|pair": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  },
+  "sex|PRX|placebo_a": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  },
+  "sex|PRX|placebo_b": {
+   "n": 135,
+   "mean_abs_footer_word_diff": 0,
+   "mean_share_of_words_in_footer_pct": 4.0
+  }
+ },
+ "carrier_set_sizes": {
+  "A": 68,
+  "B": 67
+ },
+ "uses_per_string_min_max": [
+  13,
+  135
+ ]
+}

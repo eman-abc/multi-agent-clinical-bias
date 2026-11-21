@@ -343,7 +343,7 @@ def _run_single_task_live(agent, description: str, expected_output: str, *, mode
             key = OPENROUTER_API_KEY
             extra_body = {"provider": {"order": ["google-ai-studio"], "allow_fallbacks": False}}
         # Route GPT-5.6 Luna via OpenRouter -> Azure upstream
-        elif effective_model.startswith("openai/gpt-5.6"):
+        elif effective_model.startswith("openai/gpt-"):
             base = OPENROUTER_BASE_URL
             key = OPENROUTER_API_KEY
             extra_body = {"provider": {"order": ["azure"], "allow_fallbacks": False}}

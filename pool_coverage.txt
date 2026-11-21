@@ -1,0 +1,154 @@
+﻿29178 records. fields seen: ['attribute', 'case_id', 'condition_label', 'note_text', 'rec_type', 'seen_by_models', 'signal_type', 'source_experiment', 'source_file']
+
+generator                  cond  rec_type     signal  records  cases  conflicts  median words
+DeepSeek-V4-Flash          E+    REC_CORRECT  EXP         600    200          0           127
+DeepSeek-V4-Flash          E+    REC_CORRECT  IMP         599    200          0           128
+DeepSeek-V4-Flash          E+    REC_CORRECT  PRX         597    199          0           126
+DeepSeek-V4-Flash          E+    REC_DOWN     EXP         596    200          0           116
+DeepSeek-V4-Flash          E+    REC_DOWN     IMP         586    200          0           116
+DeepSeek-V4-Flash          E+    REC_DOWN     PRX         582    198          0           116
+DeepSeek-V4-Flash          E+    REC_UP       EXP         598    200          0           117
+DeepSeek-V4-Flash          E+    REC_UP       IMP         586    200          0           116
+DeepSeek-V4-Flash          E+    REC_UP       PRX         580    198          0           116
+DeepSeek-V4-Flash          E+    REC_WRONG    EXP         600    200          0           129
+DeepSeek-V4-Flash          E+    REC_WRONG    IMP         600    200          0           126
+DeepSeek-V4-Flash          E+    REC_WRONG    PRX         596    199          0           125
+DeepSeek-V4-Flash          E-    REC_CORRECT  EXP         599    200          0           127
+DeepSeek-V4-Flash          E-    REC_CORRECT  IMP         599    200          0           127
+DeepSeek-V4-Flash          E-    REC_CORRECT  PRX         596    199          0           126
+DeepSeek-V4-Flash          E-    REC_DOWN     EXP         599    200          0           117
+DeepSeek-V4-Flash          E-    REC_DOWN     IMP         583    200          0           117
+DeepSeek-V4-Flash          E-    REC_DOWN     PRX         575    198          0           114
+DeepSeek-V4-Flash          E-    REC_UP       EXP         597    200          0           117
+DeepSeek-V4-Flash          E-    REC_UP       IMP         590    200          0           116
+DeepSeek-V4-Flash          E-    REC_UP       PRX         579    198          0           117
+DeepSeek-V4-Flash          E-    REC_WRONG    EXP         600    200          0           127
+DeepSeek-V4-Flash          E-    REC_WRONG    IMP         600    200          0           125
+DeepSeek-V4-Flash          E-    REC_WRONG    PRX         597    199          0           124
+DeepSeek-V4-Flash          N     REC_CORRECT  N           198    198          0           125
+DeepSeek-V4-Flash          N     REC_DOWN     N           193    193          0           111
+DeepSeek-V4-Flash          N     REC_UP       N           193    193          0           113
+DeepSeek-V4-Flash          N     REC_WRONG    N           199    199          0           125
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_CORRECT  PRX           2      1          0             9
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_DOWN     EXP           4      4          0           104
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_DOWN     IMP          14     14          0           130
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_DOWN     PRX          18     14          0            86
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_UP       EXP           2      2          0           105
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_UP       IMP          14     12          0           118
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_UP       PRX          20     14          0            87
+DeepSeek-V4-Flash+GPT-5.6- E+    REC_WRONG    PRX           4      2          0             9
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_CORRECT  EXP           1      1          0           106
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_CORRECT  IMP           1      1          0           119
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_CORRECT  PRX           4      2          0             9
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_DOWN     EXP           1      1          0            85
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_DOWN     IMP          17     17          0           104
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_DOWN     PRX          25     21          0            83
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_UP       EXP           3      3          0           100
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_UP       IMP          10      9          0           104
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_UP       PRX          21     17          0            85
+DeepSeek-V4-Flash+GPT-5.6- E-    REC_WRONG    PRX           3      1          0             9
+DeepSeek-V4-Flash+GPT-5.6- N     REC_CORRECT  N             2      2          0             9
+DeepSeek-V4-Flash+GPT-5.6- N     REC_DOWN     N             7      7          0           116
+DeepSeek-V4-Flash+GPT-5.6- N     REC_UP       N             7      7          0           112
+DeepSeek-V4-Flash+GPT-5.6- N     REC_WRONG    N             1      1          0             9
+DeepSeek-V4-Flash+Gemini-3 E+    None         EXP         396    134          0           103
+DeepSeek-V4-Flash+Gemini-3 E+    None         IMP         399    135          0           104
+DeepSeek-V4-Flash+Gemini-3 E+    None         PRX         400    134          0           105
+DeepSeek-V4-Flash+Gemini-3 E-    None         EXP         396    134          0           103
+DeepSeek-V4-Flash+Gemini-3 E-    None         IMP         397    135          0           106
+DeepSeek-V4-Flash+Gemini-3 E-    None         PRX         401    135          0           104
+DeepSeek-V4-Flash+Gemini-3 N     None         None        403    135          0            99
+DeepSeek-V4-Flash+Gemini-3 P     None         None        404    135          0            97
+GPT-5.6-Luna               E+    None         EXP          15      5          0            78
+GPT-5.6-Luna               E+    None         IMP          15      5          0            85
+GPT-5.6-Luna               E+    None         PRX          15      5          0            80
+GPT-5.6-Luna               E+    REC_CORRECT  EXP         420    140          0           128
+GPT-5.6-Luna               E+    REC_CORRECT  IMP         421    141          0           126
+GPT-5.6-Luna               E+    REC_CORRECT  PRX         420    141          0           124
+GPT-5.6-Luna               E+    REC_DOWN     EXP         419    140          0           117
+GPT-5.6-Luna               E+    REC_DOWN     IMP         419    140          0           118
+GPT-5.6-Luna               E+    REC_DOWN     PRX         420    140          0           117
+GPT-5.6-Luna               E+    REC_UP       EXP         419    140          0           117
+GPT-5.6-Luna               E+    REC_UP       IMP         419    140          0           118
+GPT-5.6-Luna               E+    REC_UP       PRX         419    140          0           118
+GPT-5.6-Luna               E+    REC_WRONG    EXP         420    140          0           124
+GPT-5.6-Luna               E+    REC_WRONG    IMP         420    140          0           125
+GPT-5.6-Luna               E+    REC_WRONG    PRX         419    140          0           123
+GPT-5.6-Luna               E-    None         EXP          15      5          0            85
+GPT-5.6-Luna               E-    None         IMP          15      5          0            83
+GPT-5.6-Luna               E-    None         PRX          15      5          0            79
+GPT-5.6-Luna               E-    REC_CORRECT  EXP         420    140          0           125
+GPT-5.6-Luna               E-    REC_CORRECT  IMP         418    140          0           124
+GPT-5.6-Luna               E-    REC_CORRECT  PRX         420    140          0           122
+GPT-5.6-Luna               E-    REC_DOWN     EXP         419    140          0           117
+GPT-5.6-Luna               E-    REC_DOWN     IMP         418    140          0           117
+GPT-5.6-Luna               E-    REC_DOWN     PRX         419    140          0           117
+GPT-5.6-Luna               E-    REC_UP       EXP         419    140          0           119
+GPT-5.6-Luna               E-    REC_UP       IMP         418    140          0           117
+GPT-5.6-Luna               E-    REC_UP       PRX         419    140          0           116
+GPT-5.6-Luna               E-    REC_WRONG    EXP         420    140          0           126
+GPT-5.6-Luna               E-    REC_WRONG    IMP         415    140          0           123
+GPT-5.6-Luna               E-    REC_WRONG    PRX         419    140          0           123
+GPT-5.6-Luna               N     None         None         15      5          0            82
+GPT-5.6-Luna               N     REC_CORRECT  N           140    140          0           126
+GPT-5.6-Luna               N     REC_DOWN     N           140    140          0           113
+GPT-5.6-Luna               N     REC_UP       N           141    141          0           114
+GPT-5.6-Luna               N     REC_WRONG    N           140    140          0           121
+GPT-5.6-Luna               P     None         None         15      5          0            81
+Gemini-3.8-Flash           E+    None         EXP           9      5          0           117
+Gemini-3.8-Flash           E+    None         IMP           6      5          0           123
+Gemini-3.8-Flash           E+    None         PRX           5      3          0           132
+Gemini-3.8-Flash           E-    None         EXP           9      5          0           114
+Gemini-3.8-Flash           E-    None         IMP           8      5          0            84
+Gemini-3.8-Flash           E-    None         PRX           4      3          0           114
+Gemini-3.8-Flash           N     None         None          2      1          0           112
+Gemini-3.8-Flash           P     None         None          1      1          0           112
+
+DeepSeek-V4-Flash          plain N notes:    0 cases   REC_WRONG (no carrier) notes:  199 cases   both:    0
+DeepSeek-V4-Flash+GPT-5.6- plain N notes:    0 cases   REC_WRONG (no carrier) notes:    1 cases   both:    0
+DeepSeek-V4-Flash+Gemini-3 plain N notes:  135 cases   REC_WRONG (no carrier) notes:    0 cases   both:    0
+GPT-5.6-Luna               plain N notes:    5 cases   REC_WRONG (no carrier) notes:  140 cases   both:    0
+Gemini-3.8-Flash           plain N notes:    1 cases   REC_WRONG (no carrier) notes:    0 cases   both:    0
+
+across generators: plain N notes for 140 cases; REC_WRONG without carrier for 340; both for 140
+
+old E+ / E- pairs: share of words that differ between the two notes of a pair (same case, attribute, signal, rec_type)
+generator                  rec_type     signal  pairs  median % differ  90th pct %  median |word diff|
+DeepSeek-V4-Flash          REC_CORRECT  EXP       599             17.0        28.3                   6
+DeepSeek-V4-Flash          REC_CORRECT  IMP       598             15.2        27.5                   5
+DeepSeek-V4-Flash          REC_CORRECT  PRX       596             15.2        27.8                   5
+DeepSeek-V4-Flash          REC_DOWN     EXP       595             13.6        27.9                   5
+DeepSeek-V4-Flash          REC_DOWN     IMP       570              9.5        22.7                   3
+DeepSeek-V4-Flash          REC_DOWN     PRX       564              9.1        21.9                   3
+DeepSeek-V4-Flash          REC_UP       EXP       595             12.3        27.9                   5
+DeepSeek-V4-Flash          REC_UP       IMP       576              9.6        22.8                   3
+DeepSeek-V4-Flash          REC_UP       PRX       566              9.4        20.5                   3
+DeepSeek-V4-Flash          REC_WRONG    EXP       600             17.4        31.1                   7
+DeepSeek-V4-Flash          REC_WRONG    IMP       600             15.0        27.4                   5
+DeepSeek-V4-Flash          REC_WRONG    PRX       596             15.1        27.5                   6
+DeepSeek-V4-Flash+GPT-5.6- REC_CORRECT  PRX         2              0.0         0.0                   0
+DeepSeek-V4-Flash+GPT-5.6- REC_DOWN     IMP         1              2.4         2.4                   2
+DeepSeek-V4-Flash+GPT-5.6- REC_DOWN     PRX         7              0.0         3.8                   0
+DeepSeek-V4-Flash+GPT-5.6- REC_UP       PRX         7              0.0         5.8                   0
+DeepSeek-V4-Flash+GPT-5.6- REC_WRONG    PRX         3              0.0         0.0                   0
+DeepSeek-V4-Flash+Gemini-3 None         EXP       392              9.9        29.3                   3
+DeepSeek-V4-Flash+Gemini-3 None         IMP       393              9.2        27.8                   3
+DeepSeek-V4-Flash+Gemini-3 None         PRX       398             10.3        28.4                   3
+GPT-5.6-Luna               None         EXP        15             12.4        42.7                   2
+GPT-5.6-Luna               None         IMP        15             17.6        48.8                   3
+GPT-5.6-Luna               None         PRX        15             19.0        44.6                   3
+GPT-5.6-Luna               REC_CORRECT  EXP       420             17.5        30.6                   6
+GPT-5.6-Luna               REC_CORRECT  IMP       418             15.5        28.1                   5
+GPT-5.6-Luna               REC_CORRECT  PRX       419             15.4        28.2                   6
+GPT-5.6-Luna               REC_DOWN     EXP       418             13.1        27.2                   4
+GPT-5.6-Luna               REC_DOWN     IMP       417              9.9        24.7                   3
+GPT-5.6-Luna               REC_DOWN     PRX       419              8.8        22.5                   3
+GPT-5.6-Luna               REC_UP       EXP       418             12.9        26.7                   5
+GPT-5.6-Luna               REC_UP       IMP       417              9.2        24.4                   3
+GPT-5.6-Luna               REC_UP       PRX       418              8.2        21.1                   3
+GPT-5.6-Luna               REC_WRONG    EXP       420             17.7        28.5                   7
+GPT-5.6-Luna               REC_WRONG    IMP       415             15.8        30.1                   6
+GPT-5.6-Luna               REC_WRONG    PRX       418             14.9        26.8                   6
+Gemini-3.8-Flash           None         EXP         5              7.9        12.2                   2
+Gemini-3.8-Flash           None         IMP         2              8.0        10.7                   4
+Gemini-3.8-Flash           None         PRX         2             32.8        55.4                   2

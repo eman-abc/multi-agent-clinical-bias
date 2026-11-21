@@ -30,6 +30,7 @@ Usage:
 import json
 import re
 import argparse
+import random
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -43,6 +44,80 @@ from shared.metrics import wilson_ci, mcnemar_test, cohens_h, expected_ordinal_v
 
 DEFAULT_INPUT = Path("phase0_results/experiment_conditional_sycophancy_full.jsonl")
 DEFAULT_METRICS_OUTPUT = Path("phase0_results/conditional_sycophancy_metrics.json")
+
+
+# ---------------------------------------------------------------------------
+# Cluster (case_id) bootstrap -- fixes a confirmed real gap: the pooled
+# signal_type numbers below combine 3 attributes x 2 polarities from the
+# SAME underlying 200 clinical vignettes, so each case_id contributes up
+# to 6 correlated observations to one pooled list. shared.metrics.
+# bootstrap_ci (used via summarize_with_ci) resamples individual
+# observations, treating all of them as independent -- this is
+# anti-conservative (narrower CIs, and by extension any paired test built
+# on the same flat pooling) than the data actually supports, flagged
+# directly by an external review of this project's results. This section
+# resamples whole CASE clusters instead: every bootstrap draw picks N
+# case_ids with replacement (N = number of unique cases), and pulls in
+# ALL of that case's values every time it's drawn, preserving the
+# within-case correlation rather than discarding it. The headline finding
+# (the ~70pp USMLE sycophancy gap) is far too large to be explained away
+# by this correction, but several of the smaller/near-miss cells could
+# shift meaningfully once resampled this way -- exactly why this needed
+# fixing before, not after, those numbers go in a paper.
+# ---------------------------------------------------------------------------
+
+
+def cluster_bootstrap_ci(
+    paired_values: list[tuple[str, float]], *, n_resamples: int = 1000, ci: float = 0.95, seed: int = 42,
+) -> tuple[float, float]:
+    """paired_values: [(case_id, value), ...]. Returns (ci_low, ci_high) on the mean, cluster-resampled by case_id."""
+    if not paired_values:
+        return (float("nan"), float("nan"))
+    by_case: dict[str, list[float]] = defaultdict(list)
+    for case_id, value in paired_values:
+        by_case[case_id].append(value)
+    case_ids = list(by_case.keys())
+    n_cases = len(case_ids)
+    rng = random.Random(seed)
+    resampled_means = []
+    for _ in range(n_resamples):
+        drawn = [case_ids[rng.randrange(n_cases)] for _ in range(n_cases)]
+        vals = [v for cid in drawn for v in by_case[cid]]
+        if vals:
+            resampled_means.append(sum(vals) / len(vals))
+    if not resampled_means:
+        return (float("nan"), float("nan"))
+    resampled_means.sort()
+    m = len(resampled_means)
+    lower_idx = int((1 - ci) / 2 * m)
+    upper_idx = min(int((1 - (1 - ci) / 2) * m), m - 1)
+    return (resampled_means[lower_idx], resampled_means[upper_idx])
+
+
+def summarize_with_cluster_ci(paired_values: list[tuple[str, float]]) -> dict:
+    """Same output shape as shared.metrics.summarize_with_ci, plus n_clusters (the true independent-unit count) alongside n (the raw observation count)."""
+    if not paired_values:
+        return {"mean": None, "ci_low": None, "ci_high": None, "n": 0, "n_clusters": 0}
+    vals = [v for _, v in paired_values]
+    mean = sum(vals) / len(vals)
+    lo, hi = cluster_bootstrap_ci(paired_values)
+    n_clusters = len(set(cid for cid, _ in paired_values))
+    return {"mean": mean, "ci_low": lo, "ci_high": hi, "n": len(vals), "n_clusters": n_clusters}
+
+
+def wilson_ci_clustered(paired_values: list[tuple[str, float]], *, n_resamples: int = 1000, ci: float = 0.95, seed: int = 42) -> dict:
+    """
+    Cluster-bootstrap version of a binary rate -- paired_values are
+    (case_id, 0_or_1) pairs. Used for the paired-McNemar-adjacent binary
+    yield rates that also pool across attributes for the same case_id.
+    Returns the same shape as wilson_ci's callers expect, plus n_clusters.
+    """
+    if not paired_values:
+        return {"rate": None, "ci_low": None, "ci_high": None, "n": 0, "n_clusters": 0}
+    rate = sum(v for _, v in paired_values) / len(paired_values)
+    lo, hi = cluster_bootstrap_ci(paired_values, n_resamples=n_resamples, ci=ci, seed=seed)
+    n_clusters = len(set(cid for cid, _ in paired_values))
+    return {"rate": rate, "ci_low": max(0.0, lo), "ci_high": min(1.0, hi), "n": len(paired_values), "n_clusters": n_clusters}
 
 
 def load_records(path: Path) -> list[dict]:
@@ -232,22 +307,67 @@ def collect_signal_type_pooled_raw(records: list[dict], baseline_probs: dict) ->
     return pooled
 
 
+def collect_signal_type_pooled_raw_with_case_ids(records: list[dict], baseline_probs: dict) -> dict:
+    """
+    Identical logic to collect_signal_type_pooled_raw, but keeping
+    (case_id, value) pairs instead of bare values -- needed because
+    pooling across attributes (ses/race/sex) for the SAME case means each
+    case_id contributes up to 6 correlated values to one pooled bucket,
+    and the cluster-bootstrap CI (see above) needs the case_id back to
+    resample correctly. Kept as a separate function from
+    collect_signal_type_pooled_raw rather than changing that one's return
+    shape, since other callers (the raw-distribution strip-plot figure)
+    depend on its existing flat-list shape.
+    """
+    pooled = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    for r in records:
+        if r["condition_label"] not in ("E+", "E-") or not r.get("class_probabilities"):
+            continue
+        c_id, t_type, r_type, sig = r["case_id"], r["task"], r["rec_type"], r["signal_type"]
+        if t_type == "usmle":
+            target_letter = r.get("target_letter")
+            if target_letter is None:
+                continue
+            pooled[t_type][sig][r_type].append((c_id, r["class_probabilities"].get(target_letter, 0.0)))
+        else:
+            base_probs = baseline_probs.get((c_id, t_type, r_type))
+            if not base_probs:
+                continue
+            ev_cond = expected_ordinal_value(r["class_probabilities"])
+            ev_base = expected_ordinal_value(base_probs)
+            if ev_cond is not None and ev_base is not None:
+                pooled[t_type][sig][r_type].append((c_id, ev_cond - ev_base))
+    return pooled
+
+
 def compute_signal_type_pooled(records: list[dict], baseline_probs: dict) -> dict:
     """
     THE key finding from this data: pools continuous shift values across E+/
     E-/attribute for each (task, signal_type, rec_type) -- justified because
     the paired McNemar tests above already confirm no E+/E- or attribute
     effect anywhere, so pooling for extra power here isn't hiding anything,
-    it's correctly using it. Returns {task: {signal_type: {rec_type: {mean, ci_low, ci_high, n}}}}.
+    it's correctly using it.
+
+    FIXED: this used to run a plain observation-level bootstrap
+    (summarize_with_ci) over the pooled list, treating each of a case's up
+    to 6 correlated observations (3 attributes x 2 polarities) as
+    independent -- anti-conservative, flagged directly by an external
+    review. Now uses a case_id CLUSTER bootstrap instead (see
+    cluster_bootstrap_ci above), which resamples whole cases, not
+    individual values. Returns {task: {signal_type: {rec_type: {mean,
+    ci_low, ci_high, n, n_clusters}}}} -- n is still the raw observation
+    count (for continuity with existing consumers of this shape);
+    n_clusters is the new, honest count of independent clinical vignettes
+    the CI is actually resampled over.
     """
-    pooled = collect_signal_type_pooled_raw(records, baseline_probs)
+    pooled = collect_signal_type_pooled_raw_with_case_ids(records, baseline_probs)
     out = {}
     for t_type, sigs in pooled.items():
         out[t_type] = {}
         for sig, recs in sigs.items():
             out[t_type][sig] = {}
-            for r_type, values in recs.items():
-                out[t_type][sig][r_type] = summarize_with_ci(values)
+            for r_type, paired_values in recs.items():
+                out[t_type][sig][r_type] = summarize_with_cluster_ci(paired_values)
     return out
 
 

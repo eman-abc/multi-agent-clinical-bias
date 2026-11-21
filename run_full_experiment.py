@@ -64,6 +64,7 @@ from pathlib import Path
 
 from shared.config_and_utils import (
     DRY_RUN, GENERATOR_MODEL_ID, VALIDATOR_MODEL_ID, BASELINE_TEMPERATURE,
+    EXPERIMENT_5_LOW_TEMPERATURE, EXPLORATORY_HIGH_TEMPERATURE,
     AGENT_B_API_MODELS, APIModelSpec,
 )
 from shared import experiments as exp
@@ -335,6 +336,48 @@ def report_rec_metrics(temperature: float, models: list[APIModelSpec]) -> dict:
     return out
 
 
+def report_experiment_5_metrics(models: list[APIModelSpec]) -> dict:
+    """
+    Okawa temperature-modulation check (§11): does the SES/PRX/ESI
+    demographic-carrier effect change magnitude as temperature increases?
+
+    Confirmed real bug caught before shipping: Experiment 5's own design
+    only ever produces E+ and N conditions (no E-, unlike Experiments 1/2)
+    -- so shared.metrics.compute_cfr, which compares E+ vs E-, would
+    silently return {"cfr": None, "n_cf": 0, "n_total": 0} for every one
+    of these records; it was the wrong metric for this experiment's
+    actual condition set. This reports E+ vs. N agreement directly instead
+    (via _case_top_class_map, the same lower-level helper compute_cfr
+    itself uses), plus the Wilson CI on the disagreement rate, at each of
+    the three temperatures Experiment 5 actually runs.
+    """
+    _print_section("EXPERIMENT 5 METRICS -- Okawa temperature-modulation check (SES/PRX/ESI)")
+    records = _load_jsonl_records(OUTPUT_DIR / "experiment_5.jsonl")
+    out: dict = {}
+    if not records:
+        print("No records found -- run with --experiment-5 first.")
+        return out
+
+    temperatures = (BASELINE_TEMPERATURE, EXPERIMENT_5_LOW_TEMPERATURE, EXPLORATORY_HIGH_TEMPERATURE)
+    for model_spec in models:
+        model = model_spec.display_name
+        print(f"\n--- MODEL: {model} ---")
+        out[model] = {}
+        for temperature in temperatures:
+            e_plus = met._case_top_class_map(records, attribute="ses", model=model, task="esi", condition_label="E+", temperature=temperature, logprobs_available=None, signal_type="PRX")
+            neutral = met._case_top_class_map(records, attribute="ses", model=model, task="esi", condition_label="N", temperature=temperature, logprobs_available=None, signal_type=None)
+            common = set(e_plus) & set(neutral)
+            if not common:
+                print(f"  temperature={temperature}: no paired E+/N records found.")
+                out[model][str(temperature)] = {"agreement_rate": None, "n": 0}
+                continue
+            n_agree = sum(1 for cid in common if e_plus[cid] == neutral[cid])
+            rate, lo, hi = met.wilson_ci(n_agree, len(common))
+            print(f"  temperature={temperature}: E+ vs N agreement={rate:.1%}  95% CI=[{lo:.1%},{hi:.1%}]  (n={len(common)})")
+            out[model][str(temperature)] = {"agreement_rate": rate, "ci_low": lo, "ci_high": hi, "n": len(common), "n_agree": n_agree}
+    return out
+
+
 def _actual_cases_per_model(models: list[APIModelSpec], temperature: float) -> dict:
     """
     Confirmed real bug: the metadata's `n_cases` field previously recorded
@@ -382,6 +425,29 @@ def main() -> int:
             "'gpt-5.4-mini,DeepSeek-V4-Flash'. Defaults to ALL models in "
             "shared.config_and_utils.AGENT_B_API_MODELS. Available: "
             + ", ".join(m.display_name for m in AGENT_B_API_MODELS)
+        ),
+    )
+    parser.add_argument(
+        "--experiment-5", action="store_true",
+        help=(
+            "Run ONLY Experiment 5 (Okawa temperature-modulation check: SES/PRX/ESI "
+            "at temperatures 0.0, 0.2, 0.8) instead of Experiments 1/2/3/REC. A "
+            "separate command from the default run, since it answers a different "
+            "question (does the demographic effect's magnitude change with "
+            "temperature) and uses its own checkpoint file (phase0_results/"
+            "experiment_5.jsonl) and its own metrics report."
+        ),
+    )
+    parser.add_argument(
+        "--export-csv", action="store_true",
+        help=(
+            "After running/reporting, also export a flat CSV mirror of every "
+            "checkpoint file this invocation touched (or all of them, if "
+            "--resume-only) -- one row per observation, including note_text and "
+            "agent_b_raw_text, to phase0_results/all_observations.csv (or "
+            "phase0_results/experiment_5_observations.csv with --experiment-5). "
+            "Purely additive: reads the existing JSONL checkpoints, writes a "
+            "separate .csv file, never modifies the JSONL itself."
         ),
     )
     parser.add_argument(
@@ -462,6 +528,48 @@ def main() -> int:
         "re-billing already-completed observations (Module 6's own checkpointing)."
     )
 
+    # --experiment-5 is a SEPARATE command, not an addition to the default
+    # flow: it answers a different question (does the demographic effect's
+    # magnitude change with temperature), uses its own checkpoint file, and
+    # its own metrics/report -- running it alongside Experiments 1/2/3/REC
+    # in the same invocation would conflate two different experiments'
+    # console output and metrics files for no benefit.
+    if args.experiment_5:
+        _print_section(f"EXPERIMENT 5 -- Okawa temperature-modulation check (SES/PRX/ESI), n={args.n_cases}, models=[{', '.join(m.display_name for m in models)}]")
+        if not args.resume_only:
+            r5 = exp.run_experiment_5(
+                n_cases=args.n_cases, dry_run=False, chat_completions_models=models,
+                checkpoint_path=OUTPUT_DIR / "experiment_5.jsonl",
+            )
+            print(f"Records written so far: {r5.records_written}.")
+        else:
+            print("--resume-only set: skipping all new API calls, reporting existing checkpoint only.")
+
+        exp5_metrics = report_experiment_5_metrics(models)
+        exp5_metrics_path = Path(args.metrics_output) if args.metrics_output else (
+            OUTPUT_DIR / f"experiment_5_metrics_n{args.n_cases}.json"
+        )
+        exp5_metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(exp5_metrics_path, "w") as f:
+            json.dump({
+                "metadata": {
+                    "n_cases_requested_this_run": args.n_cases,
+                    "agent_b_models": [m.display_name for m in models],
+                    "temperatures_tested": [BASELINE_TEMPERATURE, EXPERIMENT_5_LOW_TEMPERATURE, EXPLORATORY_HIGH_TEMPERATURE],
+                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                },
+                "experiment_5": exp5_metrics,
+            }, f, indent=2)
+        print(f"\nAll Experiment 5 metrics saved to: {exp5_metrics_path}")
+
+        if args.export_csv:
+            csv_path = OUTPUT_DIR / "experiment_5_observations.csv"
+            n_rows = exp.export_jsonl_to_csv([OUTPUT_DIR / "experiment_5.jsonl"], csv_path)
+            print(f"CSV export ({n_rows} rows) written to: {csv_path}")
+
+        _print_section("DONE (Experiment 5 only)")
+        return 0
+
     run_experiments(args.n_cases, args.skip_rec, args.resume_only, args.temperature, args.max_workers, models)
     demographic = report_demographic_metrics(args.temperature, models)
     redaction = report_redaction_metrics(args.temperature, models)
@@ -498,6 +606,15 @@ def main() -> int:
     with open(metrics_output_path, "w") as f:
         json.dump(full_export, f, indent=2)
     print(f"\nAll computed metrics saved to: {metrics_output_path}")
+
+    if args.export_csv:
+        csv_path = OUTPUT_DIR / "all_observations.csv"
+        jsonl_files = [
+            OUTPUT_DIR / "experiment_1.jsonl", OUTPUT_DIR / "experiment_2.jsonl",
+            OUTPUT_DIR / "experiment_3.jsonl", OUTPUT_DIR / "experiment_rec.jsonl",
+        ]
+        n_rows = exp.export_jsonl_to_csv(jsonl_files, csv_path)
+        print(f"CSV export ({n_rows} rows, all four experiment files combined) written to: {csv_path}")
 
     _print_section("DONE")
     print(

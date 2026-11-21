@@ -1,0 +1,22 @@
+{
+ "step": "bank_luna",
+ "purpose": "openai/gpt-6-luna writes one neutral note per case; deterministic validator accepts or rejects with reasons; up to 5 attempts with feedback",
+ "started_utc": "2026-10-09T21:05:45+00:00",
+ "finished_utc": "2026-10-09T21:06:08+00:00",
+ "seconds": 23.18,
+ "status": "ok",
+ "input": {
+  "kind": "inline",
+  "path": "input.jsonl",
+  "sha256": "8168ca21102af509813c362a7c3e25aec7a09a769a744392576a0a3cb2286e4c",
+  "n_lines": 20
+ },
+ "output": {
+  "path": "output.jsonl",
+  "sha256": "ade6e7f749579d7cc5a508fa8844f57012fd93a53d7e0a379db4359185438df2",
+  "n_lines": 20
+ },
+ "notes": [
+  "20 of 20 cases passed; last-attempt failure reasons: {}"
+ ]
+}

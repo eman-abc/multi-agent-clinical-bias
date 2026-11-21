@@ -1,0 +1,48 @@
+{
+ "name": "p1v2_smoke",
+ "created_utc": "2026-10-09T21:05:42+00:00",
+ "python": "3.12.6",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "packages": {
+  "openai": "3.3.0",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pandas": "3.0.5",
+  "statsmodels": "0.15.0",
+  "python-dotenv": "1.2.3"
+ },
+ "config": {
+  "step": "basenotes",
+  "cases_file": "cases20.jsonl",
+  "n_cases": 20,
+  "banks": [
+   "verbatim",
+   "luna"
+  ],
+  "model": "openai/gpt-6-luna",
+  "client": "fake",
+  "max_attempts": 5,
+  "temperature": 0.0,
+  "max_tokens": 2000,
+  "extra_body": {
+   "provider": {
+    "order": [
+     "azure"
+    ],
+    "allow_fallbacks": false
+   }
+  },
+  "writer_prompt_sha": "e400dc6221c2"
+ },
+ "config_sha256": "fcc2e1afb510e441fbbb7ab29715d7d6d344886a1ebd71c96c5dabad180adedb",
+ "code": {
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\__init__.py": "8b18c6b3b80185eaa0f7ce3d70f40af7c3772086086240df9687befaccfea1e2",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\basenotes.py": "5c8bcd6aaba1e7fab93d855b8bfca6155c7d142b7102e6c808c0a81f90b9419f",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\facts.py": "bfcd046cabc808fef9e4e1cefa9c310c608c9adee0b9d5eb7b85dc5e8844eabc",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\llm.py": "ea56899ec3626fd98f1316188427acf2601951b7789a6025b28d4d15139dc9ac",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\parse.py": "5c373c6220460f09ad5832ae6126d390dba023cc48b8c4bf0f45bbdd7cd517c0",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\prompts.py": "bfd1740265fd3151a5226e8db15871673eee3824e259eb4432d48c609980bf94",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\provenance.py": "8d5d50d653584442cdbb189f7512f9c4a7183c07b4121e42ff7d98c2419dbb9c",
+  "C:\\Mitacs Research\\multi-agent-clinical-bias\\p1v2\\stimuli.py": "9e97cbeaa84f1b46ce659ae55c134556b2e898ff2117bfeb99f001a60862ba1c"
+ }
+}

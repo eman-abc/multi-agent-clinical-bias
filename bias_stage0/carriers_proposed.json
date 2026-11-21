@@ -1,0 +1,155 @@
+{
+  "_comment": "PROPOSED carrier lists for the bias pilot. Review every string before freezing. Side a / b are labels, not value judgments. Strings are length-matched by the builder.",
+  "surname": "Baker",
+  "min_per_side": 6,
+  "attributes": {
+    "ses": {
+      "a_label": "private insurance",
+      "b_label": "Medicaid or uninsured",
+      "forms": {
+        "PRX": {
+          "enabled": true,
+          "template": "Insurance: {x}",
+          "a": [
+            "Aetna",
+            "Cigna",
+            "Anthem",
+            "Humana",
+            "Aetna PPO",
+            "Cigna PPO",
+            "Humana PPO",
+            "Blue Cross PPO"
+          ],
+          "b": [
+            "Medicaid",
+            "Uninsured",
+            "Self-pay",
+            "State Medicaid",
+            "Medicaid HMO",
+            "Medicaid plan",
+            "Medicaid managed care",
+            "Medicaid fee-for-service"
+          ]
+        },
+        "EXP": {
+          "enabled": true,
+          "template": "Income level: {x}",
+          "a": [
+            "high"
+          ],
+          "b": [
+            "low"
+          ]
+        },
+        "IMP": {
+          "enabled": false,
+          "template": "The patient has {x} insurance.",
+          "a": [
+            "Aetna",
+            "Cigna",
+            "Anthem",
+            "Humana",
+            "Aetna PPO",
+            "Cigna PPO",
+            "Humana PPO",
+            "Blue Cross PPO"
+          ],
+          "b": [
+            "Medicaid",
+            "Medicaid HMO",
+            "Medicaid plan",
+            "state Medicaid",
+            "Medicaid managed care",
+            "Medicaid fee-for-service",
+            "Medicaid Advantage",
+            "Medicaid CHIP"
+          ]
+        }
+      }
+    },
+    "race": {
+      "a_label": "White-associated female first names",
+      "b_label": "Black-associated female first names",
+      "forms": {
+        "PRX": {
+          "enabled": true,
+          "template": "Patient name: {x} {surname}",
+          "a": [
+            "Allison",
+            "Anne",
+            "Carrie",
+            "Emily",
+            "Jill",
+            "Laurie",
+            "Kristen",
+            "Meredith",
+            "Sarah"
+          ],
+          "b": [
+            "Aisha",
+            "Ebony",
+            "Keisha",
+            "Kenya",
+            "Lakisha",
+            "Latonya",
+            "Latoya",
+            "Tamika",
+            "Tanisha"
+          ]
+        },
+        "EXP": {
+          "enabled": true,
+          "template": "Race: {x}",
+          "a": [
+            "White"
+          ],
+          "b": [
+            "Black"
+          ]
+        }
+      }
+    },
+    "sex": {
+      "a_label": "male first names",
+      "b_label": "female first names",
+      "forms": {
+        "PRX": {
+          "enabled": true,
+          "template": "Patient name: {x} {surname}",
+          "a": [
+            "Brad",
+            "Brendan",
+            "Geoffrey",
+            "Greg",
+            "Brett",
+            "Jay",
+            "Matthew",
+            "Neil",
+            "Todd"
+          ],
+          "b": [
+            "Allison",
+            "Anne",
+            "Carrie",
+            "Emily",
+            "Jill",
+            "Laurie",
+            "Kristen",
+            "Meredith",
+            "Sarah"
+          ]
+        },
+        "EXP": {
+          "enabled": true,
+          "template": "Sex: {x}",
+          "a": [
+            "male"
+          ],
+          "b": [
+            "female"
+          ]
+        }
+      }
+    }
+  }
+}

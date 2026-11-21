@@ -50,7 +50,7 @@ DRY_RUN: Final[bool] = _get_bool_env("DRY_RUN", default=True)
 if DRY_RUN:
     logging.info("[config_and_utils] DRY_RUN is active -- all API-touching modules must return mock data.")
 
-GENERATOR_MODEL_ID: Final[str] = _get_str_env("GENERATOR_MODEL_ID", default="openai/gpt-5.6-luna")  # type: ignore[assignment]
+GENERATOR_MODEL_ID: Final[str] = _get_str_env("GENERATOR_MODEL_ID", default="openai/gpt-6-luna")  # type: ignore[assignment]
 VALIDATOR_MODEL_ID: Final[str] = _get_str_env("VALIDATOR_MODEL_ID", default=GENERATOR_MODEL_ID)  # type: ignore[assignment]
 
 GENERATOR_MODEL_PRICE_PER_1M_INPUT_USD: Final[float] = 0.15
@@ -114,7 +114,7 @@ AGENT_B_API_MODELS: Final[tuple[APIModelSpec, ...]] = (
         role="Cross-model comparison via OpenRouter",
     ),
     APIModelSpec(
-        display_name="GPT-5.6-Luna", api_model_id="openai/gpt-5.6-luna",
+        display_name="GPT-6-Luna", api_model_id="openai/gpt-6-luna",
         base_url=OPENROUTER_BASE_URL, api_key=OPENROUTER_API_KEY,
         extra_body={"provider": {"order": ["azure"], "allow_fallbacks": False}},
         role="Cross-model comparison via OpenRouter",

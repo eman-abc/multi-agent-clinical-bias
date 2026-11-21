@@ -1,0 +1,22 @@
+{
+ "step": "agent_b_DeepSeek_V4_Flash",
+ "purpose": "Agent B = deepseek/deepseek-v4-flash: 38802 calls (1 draw(s) per stimulus, temperature 0.0); strict answer parsing; resumable",
+ "started_utc": "2026-10-19T20:43:35+00:00",
+ "finished_utc": "2026-10-20T07:34:29+00:00",
+ "seconds": 39053.65,
+ "status": "ok",
+ "input": {
+  "kind": "file",
+  "path": "p1v2_data\\stimuli_luna_p0.jsonl",
+  "sha256": "ed3fc872407f868e158cdf67dcaea35d7f7abdec52e1facf0807978026c8a807",
+  "n_lines": 65608
+ },
+ "output": {
+  "path": "output.jsonl",
+  "sha256": "79d656be5cea6a1ba4cd093921d23c113a12edc4551eff5e59c429a33f6595c6",
+  "n_lines": 38802
+ },
+ "notes": [
+  "38802 of 38802 planned calls completed; unparseable answers: 1132; transport failures: 0"
+ ]
+}
